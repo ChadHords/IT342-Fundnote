@@ -4,11 +4,11 @@
 FundNote is an intuitive and powerful budget tracker designed for individuals, teams, and families who want to manage their finances together. With real-time collaboration, users can create shared budgets, track expenses, and set financial goals seamlessly across multiple devices.
 
 # List of Features
-• Expense Tracking
-• Financial Goal Tracking 
-• Account Login
-• Collaborative Budgeting
-• Smart Notifications
+• Expense Tracking <br />
+• Financial Goal Tracking <br />
+• Account Login <br />
+• Collaborative Budgeting <br />
+• Smart Notifications <br />
 • Permissions & Roles
 
 # Links
