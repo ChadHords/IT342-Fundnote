@@ -1,6 +1,26 @@
-# IT342-Fundnote
+# IT342-FundNote
 
-TEAM MEMBERS
+# Product Description
+FundNote is an intuitive and powerful budget tracker designed for individuals, teams, and families who want to manage their finances together. With real-time collaboration, users can create shared budgets, track expenses, and set financial goals seamlessly across multiple devices.
+
+# List of Features
+• Expense Tracking
+• Financial Goal Tracking 
+• Account Login
+• Collaborative Budgeting
+• Smart Notifications
+• Permissions & Roles
+
+# Links
+**Figma**
+https://www.figma.com/design/C9aEO0cdGr32wSPbEVq06U/Chad's-team-library?node-id=0-1&t=zVPLq04afB22iDgs-1
+
+**Diagrams**
+https://lucid.app/lucidchart/b8bfc4ca-a835-477d-b474-7670f68d25d0/edit?viewport_loc=-8%2C-9%2C1649%2C763%2C0_0&invitationId=inv_889eb06b-0a5e-4c95-950b-e5b3ac94d62d
+
+
+# Developers Profile
+TEAM MEMBERS    
 
 Member1
 NAME: DIONE ALFRED A. CABIGAS
