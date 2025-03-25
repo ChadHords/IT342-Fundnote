@@ -8,6 +8,7 @@ public class FundNoteApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(FundNoteApplication.class, args);
+		System.out.println("Status: RUNNING");
 	}
 
 }
