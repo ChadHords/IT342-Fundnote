@@ -2,7 +2,7 @@ import { Button, TextField, Typography } from "@mui/material";
 import LoginRegisterImg from "../assets/login-register-img.jpg";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { login } from "../api";
+import { signup } from "../api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,14 +10,13 @@ const Login = () => {
   const [message, setMessage] = useState("");
 
   // THIS WONT WORK YET. WAIT FOR THE SPRING TO FIREBASE TO AVOID CONFLICT (25/03/2025)
-  const handleLogin = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const data = await login(email, password);
-      localStorage.setItem("token", data.token);
-      setMessage("Login successful!");
+      const data = await signup(email, password);
+      setMessage(data.message || "Signup successful!");
     } catch (error) {
-      setMessage("Login failed. Check your credentials.");
+      setMessage("Signup failed. Try again.");
     }
   };
 
@@ -41,12 +40,12 @@ const Login = () => {
             alignItems: "center",
           }}
         >
-          <Typography sx={{ fontSize: "40px" }}>Welcome back!</Typography>
+          <Typography sx={{ fontSize: "40px" }}>Get Started</Typography>
           <Typography sx={{ fontSize: "16px", color: "#808080" }}>
-            Glad to see you again
+            Welcome to FundNote
           </Typography>
           <Typography sx={{ fontSize: "16px", color: "#808080" }}>
-            Login your account below
+            Let's create your account
           </Typography>
           <Button
             variant="outlined"
@@ -62,15 +61,12 @@ const Login = () => {
           >
             Continue with Google
           </Button>
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleSignup}>
             {/* EMAIL */}
             <TextField
               label="Email"
               variant="outlined"
               sx={{ width: "390px", marginTop: "50px" }}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
             />
             {/* PASSWORD */}
             <TextField
@@ -78,12 +74,8 @@ const Login = () => {
               type="password"
               variant="outlined"
               sx={{ width: "390px", marginTop: "30px" }}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
             />
             <Button
-              type="submit"
               variant="contained"
               component={Link}
               to="/overview"
@@ -94,22 +86,22 @@ const Login = () => {
                 backgroundColor: "#37513D",
               }}
             >
-              Sign In
+              Sign Up
             </Button>
           </form>
           <Typography
             sx={{ fontSize: "16px", marginTop: "30px", color: "#808080" }}
           >
-            Dont have an account?{" "}
+            Already have an account?{" "}
             <Link
-              to="/signup"
+              to="/login"
               style={{
                 color: "#37513D",
                 fontWeight: "Bold",
                 textDecoration: "none",
               }}
             >
-              Sign Up for free
+              Sign In
             </Link>
           </Typography>
         </div>
