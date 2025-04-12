@@ -1,22 +1,24 @@
 import { Button, TextField, Typography } from "@mui/material";
 import LoginRegisterImg from "../assets/login-register-img.jpg";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { signup } from "../api";
+import { Link, useNavigate } from "react-router-dom";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase/Firebase";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
-  // THIS WONT WORK YET. WAIT FOR THE SPRING TO FIREBASE TO AVOID CONFLICT (25/03/2025)
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const data = await signup(email, password);
-      setMessage(data.message || "Signup successful!");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("Signed up:", userCredential.user);
+
+      navigate("/login");
     } catch (error) {
-      setMessage("Signup failed. Try again.");
+      console.error("Signup Error:", error.message);
     }
   };
 
@@ -65,8 +67,12 @@ const Login = () => {
             {/* EMAIL */}
             <TextField
               label="Email"
+              type="email"
               variant="outlined"
               sx={{ width: "390px", marginTop: "50px" }}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
             {/* PASSWORD */}
             <TextField
@@ -74,11 +80,13 @@ const Login = () => {
               type="password"
               variant="outlined"
               sx={{ width: "390px", marginTop: "30px" }}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
             <Button
+              type="submit"
               variant="contained"
-              component={Link}
-              to="/overview"
               sx={{
                 width: "390px",
                 height: "50px",

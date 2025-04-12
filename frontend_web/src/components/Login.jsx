@@ -2,22 +2,31 @@ import { Button, TextField, Typography } from "@mui/material";
 import LoginRegisterImg from "../assets/login-register-img.jpg";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { login } from "../api";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase/Firebase";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  // THIS WONT WORK YET. WAIT FOR THE SPRING TO FIREBASE TO AVOID CONFLICT (25/03/2025)
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const data = await login(email, password);
-      localStorage.setItem("token", data.token);
-      setMessage("Login successful!");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const token = await userCredential.user.getIdToken();
+      console.log("Logged in. Token:", token);
+
+      // Send token to the backend but its still gonna error
+      const response = await fetch("http://localhost:8080/api/protected", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      console.log("Backend response:", data);
     } catch (error) {
-      setMessage("Login failed. Check your credentials.");
+      console.error("Login Error:", error.message);
     }
   };
 
@@ -66,10 +75,11 @@ const Login = () => {
             {/* EMAIL */}
             <TextField
               label="Email"
+              type="email"
               variant="outlined"
               sx={{ width: "390px", marginTop: "50px" }}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value) }
               required
             />
             {/* PASSWORD */}
@@ -85,8 +95,6 @@ const Login = () => {
             <Button
               type="submit"
               variant="contained"
-              component={Link}
-              to="/overview"
               sx={{
                 width: "390px",
                 height: "50px",
