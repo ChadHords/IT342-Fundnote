@@ -10,7 +10,7 @@ function Overview() {
         p: 3,
       }}
     >
-      <Typography variant="h4">Overview whoaw mga charts and tables</Typography>
+      <Typography variant="h4">Notifications</Typography>
     </Box>
   );
 }
