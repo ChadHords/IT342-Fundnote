@@ -1,13 +1,14 @@
 import { Button, TextField, Typography } from "@mui/material";
 import LoginRegisterImg from "../assets/login-register-img.jpg";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/Firebase";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,14 +18,15 @@ const Login = () => {
       console.log("Logged in. Token:", token);
 
       // Send token to the backend but its still gonna error
-      const response = await fetch("http://localhost:8080/api/protected", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      console.log("Backend response:", data);
+      // const response = await fetch("http://localhost:8080/api/protected", {
+      //   method: "GET",
+      //   headers: {
+      //     Authorization: `Bearer ${token}`
+      //   }
+      // });
+      // const data = await response.json();
+      // console.log("Backend response:", data);
+      navigate("/overview");
     } catch (error) {
       console.error("Login Error:", error.message);
     }
