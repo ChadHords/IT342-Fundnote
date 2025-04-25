@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Card, Typography, LinearProgress, IconButton, Menu, MenuItem } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-const CategoryCard = ({ categoryName, total, spent, onEdit, onDelete }) => {
+const CategoryCard = ({ categoryName, total, spent, timeFrame, onEdit, onDelete }) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
     const remaining = total - spent;
@@ -26,7 +26,7 @@ const CategoryCard = ({ categoryName, total, spent, onEdit, onDelete }) => {
                 </Menu>
             </Box>
 
-            <Typography variant="body2" color="textSecondary">Monthly</Typography>
+            <Typography variant="body2" color="textSecondary">{timeFrame}</Typography>
 
             <Box mt={1}>
                 <Box display="flex" justifyContent="space-between" alignItems="center">

@@ -18,7 +18,7 @@ const Layout = () => {
   return (
     <>
       {isSidebarVisible && <Sidebar />}
-      <div style={{ flexGrow: 1, marginLeft: isSidebarVisible ? '240px' : '0' }}>
+      <div style={{ flexGrow: 1, marginLeft: isSidebarVisible ? '260px' : '0' }}>
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
