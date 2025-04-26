@@ -1,58 +1,154 @@
-import React from 'react';
-import { Box, Typography, Button, Card, CardContent, IconButton, Divider, Grid } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-
-const StatCard = ({ title, amount, subtitle }) => (
-  <Card sx={{ p: 2 }}>
-    <Typography variant="subtitle2" color="textSecondary">{title}</Typography>
-    <Typography variant="h5" fontWeight="bold">
-      ${amount.toLocaleString()}
-    </Typography>
-    <Typography variant="body2" color="textSecondary">{subtitle}</Typography>
-  </Card>
-);
-
-const AccountCard = ({ name, balance, isNegative }) => (
-  <Card sx={{ p: 2 }}>
-    <Box display="flex" justifyContent="space-between" alignItems="center">
-      <Box display="flex" alignItems="center" gap={1}>
-        <AccountBalanceWalletIcon fontSize="small" color="#2f4f4f" />
-        <Typography variant="subtitle1" fontWeight="bold">{name}</Typography>
-      </Box>
-      <IconButton size="small"><EditIcon fontSize="small" /></IconButton>
-    </Box>
-
-    <Typography variant="h6" fontWeight="bold" color={isNegative ? 'error' : 'textPrimary'} sx={{ mt: 1 }} >
-      {isNegative ? '-$' : '$'}{Math.abs(balance).toLocaleString()}
-    </Typography>
-
-    <Typography variant="body2" color="primary" sx={{ mt: 1, cursor: 'pointer' }} >
-      View transactions
-    </Typography>
-  </Card>
-);
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Button, Divider, Grid, Dialog, DialogTitle, DialogContent, TextField, DialogActions, CircularProgress } from '@mui/material';
+import StatCard from '../components/StatCard';
+import AccountCard from '../components/AccountCard';
+import { getAuth } from 'firebase/auth';
+import axios from 'axios';
 
 const Accounts = () => {
-  // TEMPORARY DATA FOR ACCOUNTS
-  const netWorth = 150340;
-  const totalAssets = 150835;
-  const totalLiabilities = 495;
+  const predefinedAccounts = ['Cash', 'Wallet', 'Debit Card', 'Credit Card'];
 
-  const accounts = [
-    { name: 'Wallet', balance: 90204 },
-    { name: 'Debit Card', balance: 60136 },
-    { name: 'Credit Card', balance: -495 },
-  ];
+  const [openModal, setOpenModal] = useState(false);
+  const [accountName, setAccountName] = useState('');
+  const [accountAmount, setAccountAmount] = useState('');
+  const [accounts, setAccounts] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editAccountName, setEditAccountName] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+
+  const [editingId, setEditingId] = useState(null);
+
+  // POST ACCOUNTS
+  const handleSave = async () => {
+    const user = getAuth().currentUser;
+    if (accounts && user) {
+      try {
+        const token = await user.getIdToken();
+        await axios.post('http://localhost:8080/api/accounts', {
+          account: accountName,
+          amount: parseFloat(accountAmount),
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        await fetchAccounts();
+        setOpenModal(false);
+        setAccountAmount("");
+        setAccountName("");
+      } catch (error) {
+        console.error('Error adding account:', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  // GET ACCOUNTS
+  const fetchAccounts = async () => {
+    setLoading(true);
+    const user = getAuth().currentUser;
+    if (user) {
+      try {
+        const token = await user.getIdToken();
+        const response = await axios.get('http://localhost:8080/api/accounts', { 
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        setAccounts(response.data);
+      } catch (error) {
+        console.error('Error fetching account:', error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+      setAccounts([]);
+    }
+  };
+
+  const handleEditClick = (account) => {
+    setEditingId(account.id);
+    setEditAccountName(account.account);
+    setEditAmount(account.amount);
+    setEditModalOpen(true);
+  };
+
+  // UPDATE BUDGETS
+  const handleUpdate = async () => {
+    const user = getAuth().currentUser;
+    if (!editingId || !editAmount || !user) return;
+    try {
+      const token = await user.getIdToken();
+      await axios.put(`http://localhost:8080/api/accounts/${editingId}`, {
+        account: editAccountName,
+        amount: parseFloat(editAmount),
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      await fetchAccounts();
+      setEditModalOpen(false);
+    } catch (error) {
+      console.error('Error updating account:', error);
+    }
+  };
+
+  // DELETE BUDGETS
+  const handleDelete = async (accountId) => {
+    const user = getAuth().currentUser;
+    if (!accountId || !user) return;
+    try {
+      const token = await user.getIdToken();
+      await axios.delete(`http://localhost:8080/api/accounts/${accountId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      await fetchAccounts();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+    }
+  };
+
+  // CALCULATING TOTAL ASSETS, LIABILITIES, AND NET WORTH
+  const totalAssets = accounts.reduce((acc, curr) => {
+    return curr.amount > 0 ? acc + curr.amount : acc;
+  }, 0);
+
+  const totalLiabilities = accounts.reduce((acc, curr) => {
+    return curr.amount < 0 ? acc + curr.amount : acc;
+  }, 0);
+
+  const netWorth = totalAssets + totalLiabilities;
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh" >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box p={3}>
       <Box mb={2}>
-        <Typography variant="h4" fontWeight="bold" color="#2f4f4f">Accounts</Typography>
+        <Typography variant="h4" fontWeight="bold" color="#2f4f4f">
+          Accounts
+        </Typography>
       </Box>
-
       <Box display="flex" justifyContent="flex-end" mb={2} mt={4}>
-        <Button variant="contained" sx={{ backgroundColor: '#2f4f4f', borderRadius: '12px', textTransform: 'none', '&:hover': { backgroundColor: '#244040', }, }} >
+        <Button variant="contained" onClick={() => setOpenModal(true)} sx={{ backgroundColor: "#37513D", textTransform: "none", borderRadius: "8px", "&:hover": { backgroundColor: "#1e3a3a" }, }} >
           Add Account
         </Button>
       </Box>
@@ -65,19 +161,53 @@ const Accounts = () => {
           <StatCard title="Total Assets" amount={totalAssets} subtitle="Sum of all positive balances" />
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <StatCard title="Total Liabilities" amount={totalLiabilities} subtitle="Sum of all negative balances" />
+          <StatCard title="Total Liabilities" amount={totalLiabilities} subtitle="Sum of all negative balances" isNegative={totalLiabilities} />
         </Grid>
       </Grid>
 
       <Divider sx={{ my: 4 }} />
 
       <Grid container spacing={2}>
-        {accounts.map((account, index) => (
-          <Grid size={{ xs: 12, sm: 4 }} key={index}>
-            <AccountCard {...account} isNegative={account.balance < 0} />
+        {accounts.map((account) => (
+          <Grid item size={{ xs: 12, sm: 4 }} key={account.id}>
+            <AccountCard name={account.account} balance={account.amount} isNegative={account.amount < 0} onEdit={() => handleEditClick(account)} onDelete={() => handleDelete(account.id)} />
           </Grid>
         ))}
       </Grid>
+
+      {/* ======================================= MODAAAAAAAAAAAAAALLLLSSSS ============================================ */}
+
+      {/* MODAL OF ADDING NEW ACCOUNTS */}
+      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth >
+        <DialogTitle>Add Account</DialogTitle>
+        <DialogContent dividers>
+          <TextField fullWidth margin="normal" label="Account Name" name="accountName" type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
+          <TextField fullWidth margin="normal" label="Amount" name="amount" type="number" value={accountAmount} onChange={(e) => setAccountAmount(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button sx={{ color: "#37513D" }} onClick={() => setOpenModal(false)}> Cancel </Button>
+          <Button sx={{ backgroundColor: "#37513D" }} variant="contained" onClick={handleSave}> Save </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* MODAL FOR EDIT ACCOUNT */}
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="xs" fullWidth >
+        <DialogTitle fontWeight="bold" color="#37513D">
+          Edit Account
+        </DialogTitle>
+        <DialogContent dividers>
+          <TextField fullWidth margin="normal" label="New Account Name" type="text" value={editAccountName} onChange={(e) => setEditAccountName(e.target.value)} />
+          <TextField fullWidth margin="normal" label="New Amount" type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button sx={{ color: "#37513D" }} onClick={() => setEditModalOpen(false)} >
+            Cancel
+          </Button>
+          <Button variant="contained" sx={{ backgroundColor: "#37513D" }} onClick={handleUpdate} >
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

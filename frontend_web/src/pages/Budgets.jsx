@@ -18,6 +18,7 @@ const Budgets = () => {
 
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editLimit, setEditLimit] = useState('');
+
     const [editingId, setEditingId] = useState(null);
 
     // GET BUDGETS
@@ -118,6 +119,7 @@ const Budgets = () => {
         }
     };
 
+    // CALCULATE TOTAL BUDGETS
     const totalBudget = categories.reduce((acc, curr) => acc + (curr.limit || 0), 0);
     const totalSpent = categories.reduce((acc, curr) => acc + (curr.spent || 0), 0);
     const remaining = totalBudget - totalSpent;
@@ -158,14 +160,7 @@ const Budgets = () => {
             <Grid container spacing={2}>
                 {categories.map(category => (
                     <Grid item size={{ xs: 12, sm: 4 }} key={category.id}>
-                        <CategoryCard
-                            categoryName={category.category}
-                            total={category.limit}
-                            spent={category.spent || 0}
-                            timeFrame={category.timeFrame}
-                            onEdit={() => handleEditClick(category)}
-                            onDelete={() => handleDelete(category.id)}
-                        />
+                        <CategoryCard categoryName={category.category} total={category.limit} spent={category.spent || 0} timeFrame={category.timeFrame} onEdit={() => handleEditClick(category)} onDelete={() => handleDelete(category.id)} />
                     </Grid>
                 ))}
             </Grid>
@@ -176,14 +171,7 @@ const Budgets = () => {
             <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="xs" fullWidth>
                 <DialogTitle fontWeight="bold" color='#37513D'>Edit Limit</DialogTitle>
                 <DialogContent dividers>
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        label="New Limit"
-                        type="number"
-                        value={editLimit}
-                        onChange={(e) => setEditLimit(e.target.value)}
-                    />
+                    <TextField fullWidth margin="normal" label="New Limit" type="number" value={editLimit} onChange={(e) => setEditLimit(e.target.value)} />
                 </DialogContent>
                 <DialogActions>
                     <Button sx={{ color: "#37513D" }} onClick={() => setEditModalOpen(false)}>Cancel</Button>
@@ -211,15 +199,7 @@ const Budgets = () => {
                             ))}
                         </Select>
                     </FormControl>
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        label="Limit"
-                        name="limit"
-                        type="number"
-                        value={budgetLimit}
-                        onChange={(e) => setBudgetLimit(e.target.value)}
-                    />
+                    <TextField fullWidth margin="normal" label="Limit" name="limit" type="number" value={budgetLimit} onChange={(e) => setBudgetLimit(e.target.value)} />
                 </DialogContent>
                 <DialogActions>
                     <Button sx={{ color: "#37513D" }} onClick={() => setOpenModal(false)}>Cancel</Button>

@@ -34,14 +34,13 @@ public class BudgetService {
                     .get()
                     .getDocuments();
             for (QueryDocumentSnapshot document : documents) {
-                if (document != null && document.exists()) { // Check if the document exists.
+                if (document != null && document.exists()) {
                     Budget budget = document.toObject(Budget.class);
-                    if (budget != null) { // Check if toObject was successful.
-                        budget.setId(document.getId()); //moved setId here
+                    if (budget != null) {
+                        budget.setId(document.getId());
                         budgets.add(budget);
                     } else {
                         logger.warning("Document " + document.getId() + " could not be mapped to Budget class.");
-                        // Consider adding a placeholder or logging an error
                     }
                 } else {
                     logger.warning("Document " + document.getId() + " does not exist.");
@@ -75,7 +74,7 @@ public class BudgetService {
         try {
             DocumentReference budgetRef = firestore.collection(BUDGETS_COLLECTION).document(budgetId);
             DocumentSnapshot snapshot = budgetRef.get().get();
-            if (snapshot.exists() && userId.equals(snapshot.getData().get("userId"))) { // Corrected check
+            if (snapshot.exists() && userId.equals(snapshot.getData().get("userId"))) {
                 budgetRef.update(updateData).get();
             } else {
                 logger.warning("Budget not found or does not belong to user");
@@ -92,7 +91,7 @@ public class BudgetService {
         try {
             DocumentReference budgetRef = firestore.collection(BUDGETS_COLLECTION).document(budgetId);
             DocumentSnapshot snapshot = budgetRef.get().get();
-            if (snapshot.exists() && userId.equals(snapshot.getData().get("userId"))) { // Corrected check
+            if (snapshot.exists() && userId.equals(snapshot.getData().get("userId"))) {
                 budgetRef.delete().get();
             } else {
                 logger.warning("Budget not found or does not belong to user");
