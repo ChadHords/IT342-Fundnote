@@ -2,7 +2,7 @@ package com.fundnote.FundNote.Entity;
 
 import com.google.cloud.firestore.annotation.DocumentId;
 import com.google.cloud.firestore.annotation.ServerTimestamp;
-import java.util.Date; // Using Lombok for brevity
+import java.util.Date;
 
 public class Budget {
 
