@@ -12,46 +12,28 @@ import com.google.firebase.cloud.FirestoreClient;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Service
 public class TransactionService {
 
+    // Please keep the comments for learning purposes
+
     private static final String COLLECTION_NAME="transactions";
 
-    public TransactionEntity saveTransaction(TransactionEntity transaction, HttpServletRequest request) throws ExecutionException, InterruptedException, FirebaseAuthException {
+    public String saveTransaction(TransactionEntity transaction, HttpServletRequest request) throws ExecutionException, InterruptedException, FirebaseAuthException {
 
         Firestore db = FirestoreClient.getFirestore();
 
-//        // Extract token from Authorization header
-//        String authHeader = request.getHeader("Authorization");
-//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-//            throw new RuntimeException("Missing or invalid Authorization header.");
-//        }
-//
-//        // Verify the token and extract the uid from the token
-//        String idToken = authHeader.substring(7);
-//        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-//        String uid = decodedToken.getUid();
-//
-//        // Validate Transaction before saving
-//        TransactionType type = TransactionType.valueOf(transaction.getType().toString());
-//        type.validate(transaction.getAmount(), transaction.getFromAccountId(), transaction.getToAccountId(), transaction.getCategory());
-
         transaction.setTransactionId(UUID.randomUUID().toString());
         transaction.setDateCreated(new Date());
-//        transaction.setUserId(uid);
         transaction.setUserId((String)request.getAttribute("uid"));
 
         DocumentReference docRef = db.collection(COLLECTION_NAME).document(transaction.getTransactionId());
         ApiFuture<WriteResult> collectionApiFuture = docRef.set(transaction);
 
-//        return "Transaction Record successfully create at: " + collectionApiFuture.get().getUpdateTime();
-        return transaction;
+        return "Transaction Record successfully created at: " + collectionApiFuture.get().getUpdateTime();
     }
 
     public TransactionEntity getTransaction (String transactionId, HttpServletRequest request) throws ExecutionException, InterruptedException {
@@ -70,6 +52,8 @@ public class TransactionService {
         }
     }
 
+    // Not the best practice in this case, please use other one instead. Keeping this just as a reference
+    // This method is best for admins.
     public List<TransactionEntity> getTransactionsByUserId (String userId) throws ExecutionException, InterruptedException {
         Firestore db = FirestoreClient.getFirestore();
 
@@ -84,6 +68,58 @@ public class TransactionService {
 
         return transactions;
     }
+
+    // Fetch currently logged-in user's transactions
+    public List<TransactionEntity> getUserTransactions (HttpServletRequest request) throws ExecutionException, InterruptedException {
+        Firestore db = FirestoreClient.getFirestore();
+        String uid = (String) request.getAttribute("uid"); // Fetch currently logged-in user's id
+
+        CollectionReference collection = db.collection(COLLECTION_NAME);
+        Query query = collection.whereEqualTo("userId", uid);
+
+        ApiFuture<QuerySnapshot> future = query.get(); // Step 1: Async request
+        QuerySnapshot querySnapshot = future.get(); // Step 2: Block until result arrives
+
+        List<QueryDocumentSnapshot> documents = querySnapshot.getDocuments();
+        List<TransactionEntity> transactions = new ArrayList<>();
+
+        for (DocumentSnapshot document : documents) {
+            transactions.add(document.toObject(TransactionEntity.class));
+        }
+
+        return transactions;
+    }
+
+    public List<TransactionEntity> getUserTransactionsByMonth(int year, int month, HttpServletRequest request) throws ExecutionException, InterruptedException {
+        Firestore db = FirestoreClient.getFirestore();
+        String uid = (String) request.getAttribute("uid");
+
+        // Calculate start and end of the month
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1); // Month is 0-based in Java Calendar
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        Date startDate = calendar.getTime();
+
+        calendar.add(Calendar.MONTH, 1);
+        Date endDate = calendar.getTime();
+
+        // Query
+        ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                .whereEqualTo("userId", uid)
+                .whereGreaterThanOrEqualTo("dateCreated", startDate)
+                .whereLessThan("dateCreated", endDate)
+                .get();
+
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        List<TransactionEntity> transactions = new ArrayList<>();
+        for (DocumentSnapshot document : documents) {
+            transactions.add(document.toObject(TransactionEntity.class));
+        }
+
+        return transactions;
+    }
+
 
     public TransactionEntity updateTransaction (String transactionId,TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
 
