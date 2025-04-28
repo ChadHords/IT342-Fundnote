@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Grid, Paper, Box, Typography, CircularProgress, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
 import { Bar, BarChart, Cell, ResponsiveContainer, XAxis, Tooltip, LabelList } from "recharts";
+import axios from "axios";
+import { getAuth } from "firebase/auth";
 
 const Overview = () => {
   // Tangtanga nya ni after
@@ -33,15 +35,57 @@ const Overview = () => {
     { id: 3, title: 'Vacation', recentlyUpdated: '01/01/2025', availableBudget: 500, totalBudget: 5000 },
   ];
 
-  const COLORS = ["#8884d8", "#82ca9d", "#ffc658"];
+  const [budgets, setBudgets] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  const fetchBudgets = async () => {
+    setLoading(true);
+    const user = getAuth().currentUser;
+    if (user) {
+      try {
+        const token = await user.getIdToken();
+        const response = await axios.get('http://localhost:8080/api/budgets', { 
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        setBudgets(response.data);
+      } catch (error) {
+        console.error('Error fetching budgets:', error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+      setBudgets([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchBudgets();
+  }, []);
+
+  //For Remaining Budget (Not sure if para ara ba jud ni kaw na bahala change)
+  const totalBudget = budgets.reduce((acc, curr) => acc + (curr.limit || 0), 0);
+  const totalSpent = budgets.reduce((acc, curr) => acc + (curr.spent || 0), 0);
+  const remaining = totalBudget - totalSpent;
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Temporary data to be deleted
   const available = 18000;
   const current = 10800;
   const date = "17 December";
   const percentage = (current / available) * 100;
 
   return (
-    <Box p={3} backgroundColor="#F5F5F5" borderRadius={3}>
+    <Box p={3} backgroundColor="#F5F5F5">
       <Grid container spacing={3}>
         {/* Analytics */}
         <Grid item size={{ xs: 12, sm: 8 }}>
@@ -84,23 +128,22 @@ const Overview = () => {
           <Paper elevation={3} sx={{ backgroundColor: "#EDC951", borderRadius: 4, p: 3, color: "white", height: 240, display: "flex", flexDirection: "column", justifyContent: "space-between", }}>
             <Box>
               <Typography variant="subtitle2" sx={{ opacity: 0.8 }}>
-                Available this Month
+                Remaining Budget
               </Typography>
               <Typography variant="h4" fontWeight="bold">
-                ${available.toLocaleString()}
+                ${remaining.toLocaleString()}
               </Typography>
             </Box>
 
             {/* Circular Progress Bar */}
             <Box sx={{ position: "relative", display: "inline-flex", alignSelf: "center" }}>
-              <CircularProgress variant="determinate" value={percentage} size={150} thickness={5} sx={{ color: "white", backgroundColor: "#EED47E", borderRadius: "50%", }} />
+              <CircularProgress variant="determinate" value={(totalSpent / totalBudget) * 100} size={150} thickness={5} sx={{ color: "white", backgroundColor: "#EED47E", borderRadius: "50%", }} />
               <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: "absolute", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", }} >
                 <Typography variant="h6" component="div" color="white">
-                  ${current.toLocaleString()}
+                  ${totalSpent.toLocaleString()}
                 </Typography>
-                <Typography variant="caption" color="white">
-                  {date}
-                </Typography>
+                <Typography variant="caption" color="white">spent on</Typography>
+                <Typography variant="caption" color="white"> {date} </Typography>
               </Box>
             </Box>
           </Paper>
@@ -108,11 +151,11 @@ const Overview = () => {
           
         {/* Budget */}
         <Grid item size={{ xs: 12, sm: 9 }}>
-          <Paper elevation={3} sx={{ p: 3, height: 240, borderRadius: 3 }}>
-            <Box color="text.secondary">
+          <Paper elevation={3} sx={{ pl: 3, pr: 3, pb: 5, pt: 1, height: 240, borderRadius: 3 }}>
+            {/* <Box color="text.secondary">
               <Typography variant="h5" color="#37513D" fontWeight="bold">Budgets</Typography>
-            </Box>
-            <TableContainer sx={{ pt: 1}}>
+            </Box> */}
+            <TableContainer>
               <Table sx={{ minWidth: 350 }} aria-label="budget table">
                 <TableHead>
                   <TableRow>
@@ -124,26 +167,26 @@ const Overview = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {budgetData.map((row) => (
+                  {budgets.slice(0, 3).map((budget, index) => (
                     <TableRow
-                      key={row.id}
+                      key={budget.id}
                       sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                     >
                       <TableCell component="th" scope="row">
-                        {row.id}
+                        {index + 1}
                       </TableCell>
-                      <TableCell>{row.title}</TableCell>
-                      <TableCell>{row.recentlyUpdated}</TableCell>
-                      <TableCell>{row.availableBudget} / {row.totalBudget}</TableCell>
+                      <TableCell>{budget.category}</TableCell>
+                      {/* <TableCell>{budget.recentUpdated}</TableCell> */} <TableCell>-</TableCell>
+                      <TableCell>{budget.spent} / {budget.limit}</TableCell>
                       <TableCell>
-                        <Box
-                          sx={{
-                            width: 40,
-                            height: 20,
-                            borderRadius: '50%',
-                            backgroundColor: '#e0e0e0',
-                          }}
-                        />
+                        <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                          <CircularProgress variant="determinate" value={(budget.spent / budget.limit) * 100} size={35} thickness={5} sx={{ color: "#37513D", borderRadius: "50%" }} />
+                          <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center', }} >
+                            <Typography variant="caption" component="div" color="text.secondary">
+                              {`${Math.round((budget.spent / budget.limit) * 100)}%`}
+                            </Typography>
+                          </Box>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}
