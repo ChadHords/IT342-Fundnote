@@ -5,7 +5,7 @@ import axios from "axios";
 import { getAuth } from "firebase/auth";
 
 const Overview = () => {
-  // Tangtanga nya ni after
+  // Tangtanga nya ni after sa analytics nga part
   const salesData = [
     { month: "Jan", total: 500 },
     { month: "Feb", total: 230 },
@@ -19,20 +19,6 @@ const Overview = () => {
     { month: "Oct", total: 1234 },
     { month: "Nov", total: 1200 },
     { month: "Dec", total: 600 },
-  ];
-
-  // Kani sad
-  const pieData = [
-    { name: "Website", value: 374.82 },
-    { name: "Mobile App", value: 241.60 },
-    { name: "Other", value: 213.42 },
-  ];
-
-  // Ug kani
-  const budgetData = [
-    { id: 1, title: 'Rent', recentlyUpdated: '03/25/2025', availableBudget: 10000, totalBudget: 10000 },
-    { id: 2, title: 'Groceries', recentlyUpdated: '03/25/2025', availableBudget: 3120, totalBudget: 8000 },
-    { id: 3, title: 'Vacation', recentlyUpdated: '01/01/2025', availableBudget: 500, totalBudget: 5000 },
   ];
 
   const [budgets, setBudgets] = useState([]);
@@ -65,7 +51,6 @@ const Overview = () => {
     fetchBudgets();
   }, []);
 
-  //For Remaining Budget (Not sure if para ara ba jud ni kaw na bahala change)
   const totalBudget = budgets.reduce((acc, curr) => acc + (curr.limit || 0), 0);
   const totalSpent = budgets.reduce((acc, curr) => acc + (curr.spent || 0), 0);
   const remaining = totalBudget - totalSpent;
@@ -77,12 +62,6 @@ const Overview = () => {
       </Box>
     );
   }
-
-  // Temporary data to be deleted
-  const available = 18000;
-  const current = 10800;
-  const date = "17 December";
-  const percentage = (current / available) * 100;
 
   return (
     <Box p={3} backgroundColor="#F5F5F5">
