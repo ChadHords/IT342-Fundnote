@@ -55,6 +55,8 @@ const Overview = () => {
   const totalSpent = budgets.reduce((acc, curr) => acc + (curr.spent || 0), 0);
   const remaining = totalBudget - totalSpent;
 
+  const date = "30 April"; // Replace with the actual functional current date -Dione
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
