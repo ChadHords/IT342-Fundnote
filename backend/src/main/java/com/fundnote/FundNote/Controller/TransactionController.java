@@ -20,13 +20,11 @@ public class TransactionController {
 
     @PostMapping
     public String saveTransaction(@RequestBody TransactionEntity transaction, HttpServletRequest request) throws ExecutionException, InterruptedException, FirebaseAuthException {
-
         return transactionService.saveTransaction(transaction, request);
     }
 
     @GetMapping("/{transactionId}")
     public TransactionEntity getTransaction(@PathVariable String transactionId, HttpServletRequest request) throws ExecutionException, InterruptedException {
-
         return transactionService.getTransaction(transactionId, request);
     }
 
@@ -35,31 +33,32 @@ public class TransactionController {
     // Why? Impractical endpoint naming, asks for userId from frontend when the currently logged-in user's uid is already stored in firebase
     @GetMapping("/getAllByUserId/{userId}")
     public List<TransactionEntity> getTransactionsByUserId(@PathVariable String userId) throws ExecutionException, InterruptedException {
-
         return transactionService.getTransactionsByUserId(userId);
     }
 
     @GetMapping
     public List<TransactionEntity> getUserTransactions(HttpServletRequest request) throws ExecutionException, InterruptedException {
-
         return transactionService.getUserTransactions(request);
     }
 
     @GetMapping("/{month}")
     public List<TransactionEntity> getTransactionsByMonth(int year, int month, HttpServletRequest request) throws ExecutionException, InterruptedException {
-
         return transactionService.getUserTransactionsByMonth(year, month, request);
     }
 
     @PutMapping("/{transactionId}")
     public TransactionEntity updateTransaction(@PathVariable String transactionId, @RequestBody TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
-
         return transactionService.updateTransaction(transactionId, updatedTransaction, request);
     }
 
     @DeleteMapping("/{transactionId}")
     public String deleteTransaction(@PathVariable String transactionId, HttpServletRequest request) throws ExecutionException, InterruptedException {
-
         return transactionService.deleteTransaction(transactionId, request);
     }
+
+    @DeleteMapping("/deleteAllUserTransactions")
+    public String deleteAllUserTransactions(HttpServletRequest request) throws ExecutionException, InterruptedException {
+        return transactionService.deleteAllUserTransactions(request);
+    }
+
 }

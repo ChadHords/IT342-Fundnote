@@ -5,9 +5,7 @@ import com.fundnote.FundNote.Enum.TransactionType;
 import com.fundnote.FundNote.Utils.UserAuthUtil;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.cloud.FirestoreClient;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
@@ -31,6 +29,19 @@ public class TransactionService {
         transaction.setUserId((String)request.getAttribute("uid"));
 
         DocumentReference docRef = db.collection(COLLECTION_NAME).document(transaction.getTransactionId());
+
+        // Automatically convert amount to negative if it's an EXPENSE
+        if (transaction.getType() == TransactionType.EXPENSE && transaction.getAmount() > 0) {
+            transaction.setAmount(-transaction.getAmount());
+        }
+
+        // Validate transaction based on its type
+        transaction.getType().validate(
+                transaction.getAmount(),
+                transaction.getFromAccountId(),
+                transaction.getToAccountId(),
+                transaction.getCategory()
+        );
         ApiFuture<WriteResult> collectionApiFuture = docRef.set(transaction);
 
         return "Transaction Record successfully created at: " + collectionApiFuture.get().getUpdateTime();
@@ -120,6 +131,21 @@ public class TransactionService {
         return transactions;
     }
 
+    public List<TransactionEntity> getUserTransactionsByCategory(String category, HttpServletRequest request) throws ExecutionException, InterruptedException {
+        Firestore db = FirestoreClient.getFirestore();
+        String uid = (String) request.getAttribute("uid");
+
+        ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                .whereEqualTo("userId", uid)
+                .whereEqualTo("category", category).get();
+
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        List<TransactionEntity> transactions = new ArrayList<>();
+        for (DocumentSnapshot document : documents) {
+            transactions.add(document.toObject(TransactionEntity.class));
+        }
+        return transactions;
+    }
 
     public TransactionEntity updateTransaction (String transactionId,TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
 
@@ -163,4 +189,32 @@ public class TransactionService {
         ApiFuture<WriteResult> writeResult = docRef.delete();
         return "Transaction successfully deleted at: " + writeResult.get().getUpdateTime();
     }
+
+    public String deleteAllUserTransactions(HttpServletRequest request) throws ExecutionException, InterruptedException {
+        Firestore db = FirestoreClient.getFirestore();
+        String uid = (String) request.getAttribute("uid");
+
+        // Query all transactions where userId matches
+        ApiFuture<QuerySnapshot> future = db.collection(COLLECTION_NAME)
+                .whereEqualTo("userId", uid)
+                .get();
+
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        WriteBatch batch = db.batch();
+
+        for (QueryDocumentSnapshot doc : documents) {
+            batch.delete(doc.getReference());
+        }
+
+        if (documents.isEmpty()) {
+            return "No transactions found for user.";
+        }
+
+        // Commit the batch delete
+        ApiFuture<List<WriteResult>> commitFuture = batch.commit();
+        commitFuture.get(); // Wait for the batch to complete
+
+        return "Successfully deleted " + documents.size() + " transaction(s) for the user.";
+    }
+
 }
