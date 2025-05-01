@@ -8,19 +8,25 @@ import com.google.cloud.firestore.Firestore;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class FirebaseConfig {
 
     @Bean
     public FirebaseApp firebaseApp() throws IOException {
-        // Load the service account key JSON file
-        InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream("FIREBASE_CONFIG");  //Make sure the file is in the resource folder
-        if (serviceAccount == null) {
-            throw new IOException("Firebase Service Account file not found!");
+        // Load the service account key JSON from the environment variable
+        String firebaseConfig = System.getenv("FIREBASE_CONFIG");
+        if (firebaseConfig == null || firebaseConfig.isEmpty()) {
+            throw new IOException("Firebase Service Account configuration not found!");
         }
+
+        // Convert the string from the environment variable into an InputStream
+        InputStream serviceAccount = new ByteArrayInputStream(firebaseConfig.getBytes(StandardCharsets.UTF_8));
 
         // Build Firebase options with the credentials
         FirebaseOptions options = new FirebaseOptions.Builder()
@@ -33,7 +39,6 @@ public class FirebaseConfig {
 
     @Bean
     public FirebaseAuth firebaseAuth(FirebaseApp firebaseApp) {
-        // Get FirebaseAuth instance
         return FirebaseAuth.getInstance(firebaseApp);
     }
 
