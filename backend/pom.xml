@@ -35,6 +35,17 @@
 			<groupId>com.google.firebase</groupId>
 			<artifactId>firebase-admin</artifactId>
 			<version>9.4.3</version>
+			<exclusions>
+				<!-- Exclude Netty's native crypto (tcnative) so JDK SSL is used -->
+				<exclusion>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-tcnative-boringssl-static</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-tcnative</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 <!--		<dependency>-->
 <!--			<groupId>org.springframework.boot</groupId>-->
