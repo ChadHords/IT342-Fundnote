@@ -19,7 +19,6 @@ public class FirebaseConfig {
 
     @Bean
     public FirebaseApp firebaseApp() throws IOException {
-        // Load the service account key JSON from the environment variable
         String firebaseConfig = System.getenv("FIREBASE_CONFIG");
         if (firebaseConfig == null || firebaseConfig.isEmpty()) {
             throw new IOException("Firebase Service Account configuration not found!");
@@ -28,12 +27,10 @@ public class FirebaseConfig {
         // Convert the string from the environment variable into an InputStream
         InputStream serviceAccount = new ByteArrayInputStream(firebaseConfig.getBytes(StandardCharsets.UTF_8));
 
-        // Build Firebase options with the credentials
         FirebaseOptions options = new FirebaseOptions.Builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                 .build();
 
-        // Initialize FirebaseApp
         return FirebaseApp.initializeApp(options);
     }
 
