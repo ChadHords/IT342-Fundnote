@@ -6,4 +6,4 @@ FROM eclipse-temurin:20-jdk-alpine
 COPY --from=build /target/*.jar fundnote.jar
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "fundnote.jar"]
+ENTRYPOINT ["sh", "-c", "java -jar fundnote.jar --server.port=${PORT}"]
