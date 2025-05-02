@@ -14,9 +14,9 @@ public enum TransactionType {
                 if (category == null) {
                     throw new InvalidTransactionException("INCOME category must be specified");
                 }
-                if (amount <= 0) {
-                    throw new InvalidTransactionException("INCOME must have a positive amount");
-                }
+//                if (amount <= 0) {
+//                    throw new InvalidTransactionException("INCOME must have a positive amount");
+//                }
                 if (fromAccountId != null) {
                     throw new InvalidTransactionException("INCOME 'from' account must be null");
                 }
@@ -28,9 +28,9 @@ public enum TransactionType {
                 if (category == null) {
                     throw new InvalidTransactionException("EXPENSE category must be specified");
                 }
-                if (amount >= 0) {
-                    throw new InvalidTransactionException("EXPENSE must have a negative number");
-                }
+//                if (amount >= 0) {
+//                    throw new InvalidTransactionException("EXPENSE must have a negative number");
+//                }
                 if (fromAccountId == null) {
                     throw new InvalidTransactionException("EXPENSE must have a 'from' account specified");
                 }
@@ -39,9 +39,9 @@ public enum TransactionType {
                 }
                 break;
             case TRANSFER:
-                if (amount <= 0) {
-                    throw new InvalidTransactionException("TRANSFER amount must not be 0 or less");
-                }
+//                if (amount <= 0) {
+//                    throw new InvalidTransactionException("TRANSFER amount must not be 0 or less");
+//                }
                 if (fromAccountId == null || toAccountId == null) {
                     throw new InvalidTransactionException("TRANSFER 'from' and 'to' accounts must be specified");
                 }

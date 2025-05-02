@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button, Divider, Grid, Dialog, DialogTitle, DialogContent, TextField, DialogActions, CircularProgress } from '@mui/material';
 import StatCard from '../components/StatCard';
 import AccountCard from '../components/AccountCard';
-import { getAuth } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import axios from 'axios';
 
 const Accounts = () => {
@@ -48,8 +48,17 @@ const Accounts = () => {
   };
 
   useEffect(() => {
-    fetchAccounts();
-  }, []);
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          await fetchAccounts();
+        } else {
+          setAccounts([]);
+        }
+      });
+  
+      return () => unsubscribe(); // cleanup listener
+    }, []);
 
   // GET ACCOUNTS
   const fetchAccounts = async () => {
