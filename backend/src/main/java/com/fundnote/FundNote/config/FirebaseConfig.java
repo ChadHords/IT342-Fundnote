@@ -24,10 +24,12 @@ public class FirebaseConfig {
             throw new IOException("Firebase Service Account configuration not found!");
         }
 
-        // Convert the string from the environment variable into an InputStream
+        // Replace literal \n with actual newlines for proper PKCS#8 formatting
+        firebaseConfig = firebaseConfig.replace("\\n", "\n");
+
         InputStream serviceAccount = new ByteArrayInputStream(firebaseConfig.getBytes(StandardCharsets.UTF_8));
 
-        FirebaseOptions options = new FirebaseOptions.Builder()
+        FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                 .build();
 
