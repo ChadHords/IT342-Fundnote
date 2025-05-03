@@ -16,7 +16,7 @@ import java.io.IOException;
 @Component
 public class FirebaseTokenFilter extends OncePerRequestFilter {
 
-    private final String allowedOrigin = "https://fundnotedev.netlify.app"; // Ensure this matches your React app's origin
+    private final String allowedOrigin = "fundnotedev.netlify.app"; // Ensure this matches your React app's origin
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

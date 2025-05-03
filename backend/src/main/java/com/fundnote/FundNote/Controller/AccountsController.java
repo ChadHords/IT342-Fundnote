@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 @Controller
 @RequestMapping("/api/accounts")
-@CrossOrigin(origins = "https://fundnotedev.netlify.app")
+@CrossOrigin(origins = "fundnotedev.netlify.app")
 public class AccountsController {
 
     private final FirebaseAuth firebaseAuth;
