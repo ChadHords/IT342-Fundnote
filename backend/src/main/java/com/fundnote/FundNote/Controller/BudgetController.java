@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/budgets")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://fundnotedev.netlify.app")
 public class BudgetController {
 
     private final FirebaseAuth firebaseAuth;
