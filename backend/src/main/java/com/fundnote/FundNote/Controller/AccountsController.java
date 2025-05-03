@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 @Controller
 @RequestMapping("/api/accounts")
-//@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AccountsController {
 
     private final FirebaseAuth firebaseAuth;
