@@ -24,7 +24,7 @@ const Signup = () => {
 
       const idToken = await user.getIdToken(); 
 
-      await axios.post("http://localhost:8080/api/users/register", {
+      await axios.post("https://it342-fundnote.onrender.com/api/users/register", {
         uid: user.uid,
         name: name,
       }, {

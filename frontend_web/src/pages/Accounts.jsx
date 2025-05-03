@@ -28,7 +28,7 @@ const Accounts = () => {
     if (accounts && user) {
       try {
         const token = await user.getIdToken();
-        await axios.post('http://localhost:8080/api/accounts', {
+        await axios.post('https://it342-fundnote.onrender.com/api/accounts', {
           account: accountName,
           amount: parseFloat(accountAmount),
         }, {
@@ -67,7 +67,7 @@ const Accounts = () => {
     if (user) {
       try {
         const token = await user.getIdToken();
-        const response = await axios.get('http://localhost:8080/api/accounts', { 
+        const response = await axios.get('https://it342-fundnote.onrender.com/api/accounts', { 
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -97,7 +97,7 @@ const Accounts = () => {
     if (!editingId || !editAmount || !user) return;
     try {
       const token = await user.getIdToken();
-      await axios.put(`http://localhost:8080/api/accounts/${editingId}`, {
+      await axios.put(`https://it342-fundnote.onrender.com/api/accounts/${editingId}`, {
         account: editAccountName,
         amount: parseFloat(editAmount),
       }, {
@@ -119,7 +119,7 @@ const Accounts = () => {
     if (!accountId || !user) return;
     try {
       const token = await user.getIdToken();
-      await axios.delete(`http://localhost:8080/api/accounts/${accountId}`, {
+      await axios.delete(`https://it342-fundnote.onrender.com/api/accounts/${accountId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

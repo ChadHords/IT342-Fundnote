@@ -140,7 +140,7 @@ const Transactions = () => {
         fromAccountId: type === "EXPENSE" ? fromAccountId : null,
       };
 
-      await axios.post("http://localhost:8080/api/transactions", payload, {
+      await axios.post("https://it342-fundnote.onrender.com/api/transactions", payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -170,7 +170,7 @@ const Transactions = () => {
     if (user) {
       try {
         const token = await user.getIdToken();
-        const response = await axios.get("http://localhost:8080/api/transactions", {
+        const response = await axios.get("https://it342-fundnote.onrender.com/api/transactions", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -193,7 +193,7 @@ const Transactions = () => {
     if (user) {
       try {
         const token = await user.getIdToken();
-        const response = await axios.get("http://localhost:8080/api/accounts", {
+        const response = await axios.get("https://it342-fundnote.onrender.com/api/accounts", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

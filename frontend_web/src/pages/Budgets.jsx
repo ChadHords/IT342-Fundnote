@@ -51,7 +51,7 @@ const Budgets = () => {
     if (user) {
       try {
         const token = await user.getIdToken();
-        const response = await axios.get("http://localhost:8080/api/budgets", {
+        const response = await axios.get("https://it342-fundnote.onrender.com/api/budgets", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -89,7 +89,7 @@ const Budgets = () => {
       try {
         const token = await user.getIdToken();
         await axios.post(
-          "http://localhost:8080/api/budgets",
+          "https://it342-fundnote.onrender.com/api/budgets",
           {
             category: selectedCategory,
             limit: parseFloat(budgetLimit),
@@ -125,7 +125,7 @@ const Budgets = () => {
     try {
       const token = await user.getIdToken();
       await axios.put(
-        `http://localhost:8080/api/budgets/${editingId}`,
+        `https://it342-fundnote.onrender.com/api/budgets/${editingId}`,
         {
           limit: parseFloat(editLimit),
         },
@@ -149,7 +149,7 @@ const Budgets = () => {
     if (!categoryId || !user) return;
     try {
       const token = await user.getIdToken();
-      await axios.delete(`http://localhost:8080/api/budgets/${categoryId}`, {
+      await axios.delete(`https://it342-fundnote.onrender.com/api/budgets/${categoryId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
