@@ -23,7 +23,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String origin = request.getHeader("Origin");
-        if (origin != null && origin.equals("https://fundnotedev.netlify.app")) {
+        if (origin != null && origin.equals("https://fundnote.netlify.app")) {
             response.setHeader("Access-Control-Allow-Origin", origin);
             response.setHeader("Access-Control-Allow-Credentials", "true");
         }
