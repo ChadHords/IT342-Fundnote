@@ -26,8 +26,17 @@ import axios from "axios";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const Transactions = () => {
-  const [loading, setLoading] = useState(false);
+  const predefinedCategories = [
+    "Groceries",
+    "Transport",
+    "Utilities",
+    "Entertainment",
+    "Health",
+    "Savings",
+  ];
 
+  const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
   // Automatically fetch the user's transactions after they log in, and to clear them if they log out
   useEffect(() => {
     const auth = getAuth();
@@ -54,6 +63,7 @@ const Transactions = () => {
     type: "",
     toAccountId: "",
     fromAccountId: "",
+    notes: "",
   });
 
   // const handleInputChange = (e) => {
@@ -62,6 +72,7 @@ const Transactions = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === "amount" && parseFloat(value) < 0) return;
     setNewTransaction((prev) => {
       if (name === "type") {
         return {
@@ -105,7 +116,7 @@ const Transactions = () => {
   // };
 
   const handleAddTransaction = async () => {
-    const { type, category, date, amount, toAccountId, fromAccountId } = newTransaction;
+    const { type, category, date, amount, toAccountId, fromAccountId, notes } = newTransaction;
 
     if (!category || !date || !amount || !type || (!toAccountId && !fromAccountId)) {
       alert("Please fill out all fields");
@@ -138,6 +149,7 @@ const Transactions = () => {
         type,
         toAccountId: type === "INCOME" ? toAccountId : null,
         fromAccountId: type === "EXPENSE" ? fromAccountId : null,
+        notes,
       };
 
       await axios.post("http://localhost:8080/api/transactions", payload, {
@@ -153,6 +165,7 @@ const Transactions = () => {
         type: "",
         toAccountId: "",
         fromAccountId: "",
+        notes: "",
       });
       setOpenModal(false);
       fetchTransactions();
@@ -239,8 +252,7 @@ const Transactions = () => {
             "&:hover": { backgroundColor: "#1e3a3a" },
           }}
         >
-          {" "}
-          Add Transaction{" "}
+          Add Transaction
         </Button>
       </Box>
 
@@ -282,7 +294,7 @@ const Transactions = () => {
         </Table>
       </TableContainer>
 
-      {/* ADD TRANSACTION MODAL NOT FINISHED YET AND NO CRUD */}
+      {/* ADD TRANSACTION MODAL */}
       <Dialog
         open={openModal}
         onClose={() => setOpenModal(false)}
@@ -306,14 +318,30 @@ const Transactions = () => {
               <MenuItem value="EXPENSE">Expense</MenuItem>
             </Select>
           </FormControl>
-          <TextField
+          {/* <TextField
             fullWidth
             margin="normal"
             label="Category"
             name="category"
             value={newTransaction.category}
             onChange={handleInputChange}
-          />
+          /> */}
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="category-label">Category</InputLabel>
+            <Select
+              labelId="category-label"
+              name="category"
+              value={newTransaction.category}
+              onChange={handleInputChange}
+              label="Category"
+            >
+              {predefinedCategories.map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <TextField
             fullWidth
             margin="normal"
@@ -332,12 +360,10 @@ const Transactions = () => {
             type="number"
             value={newTransaction.amount}
             onChange={handleInputChange}
+            inputProps={{ min: 0 }}
           />
-
           <FormControl fullWidth margin="normal">
-            <InputLabel id="account-label">
-              {newTransaction.type === "INCOME" ? "To Account" : "From Account"}
-            </InputLabel>
+            <InputLabel id="account-label">Account</InputLabel>
             <Select
               labelId="account-label"
               name={newTransaction.type === "INCOME" ? "toAccountId" : "fromAccountId"}
@@ -356,6 +382,19 @@ const Transactions = () => {
               ))}
             </Select>
           </FormControl>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Notes (Optional)"
+            name="notes"
+            multiline
+            rows={3}
+            value={newTransaction.notes || ""}
+            onChange={handleInputChange}
+            inputProps={{ maxLength: 255 }}
+            helperText={`${(newTransaction.notes || "").length}/255`}
+            FormHelperTextProps={{ sx: { textAlign: "right", m: 0 } }}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenModal(false)}>Cancel</Button>

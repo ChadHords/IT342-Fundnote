@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.cloud.FirestoreClient;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+import com.fundnote.FundNote.Entity.Accounts;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -23,12 +24,11 @@ public class TransactionService {
     public String saveTransaction(TransactionEntity transaction, HttpServletRequest request) throws ExecutionException, InterruptedException, FirebaseAuthException {
 
         Firestore db = FirestoreClient.getFirestore();
+        String uid = (String)request.getAttribute("uid");
 
         transaction.setTransactionId(UUID.randomUUID().toString());
         transaction.setDateCreated(new Date());
-        transaction.setUserId((String)request.getAttribute("uid"));
-
-        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transaction.getTransactionId());
+        transaction.setUserId(uid);
 
         // Automatically convert amount to negative if it's an EXPENSE
         if (transaction.getType() == TransactionType.EXPENSE && transaction.getAmount() > 0) {
@@ -42,6 +42,49 @@ public class TransactionService {
                 transaction.getToAccountId(),
                 transaction.getCategory()
         );
+
+        // 🔼 INCOME: add amount to toAccount
+        if (transaction.getType() == TransactionType.INCOME) {
+            String toAccountId = transaction.getToAccountId();
+            DocumentReference accountRef = db.collection("accounts").document(toAccountId);
+            DocumentSnapshot accountSnapshot = accountRef.get().get();
+
+            if (!accountSnapshot.exists()) {
+                throw new IllegalArgumentException("Account not found: " + toAccountId);
+            }
+
+            Accounts account = accountSnapshot.toObject(Accounts.class);
+            if (account != null && account.getUserId().equals(uid)) {
+                double newAmount = account.getAmount() + transaction.getAmount();
+                account.setAmount(newAmount);
+                accountRef.set(account); // Save updated balance
+            } else {
+                throw new SecurityException("Unauthorized access to account");
+            }
+        }
+
+        // EXPENSE: subtract amount to fromAccount
+        if (transaction.getType() == TransactionType.EXPENSE) {
+            String fromAccountId = transaction.getFromAccountId();
+            DocumentReference accountRef = db.collection("accounts").document(fromAccountId);
+            DocumentSnapshot accountSnapshot = accountRef.get().get();
+
+            if (!accountSnapshot.exists()) {
+                throw new IllegalArgumentException("Account not found: " + fromAccountId);
+            }
+
+            Accounts account = accountSnapshot.toObject(Accounts.class);
+            if (account != null && account.getUserId().equals(uid)) {
+                double newAmount = account.getAmount() + transaction.getAmount();
+                account.setAmount(newAmount);
+                accountRef.set(account); // Save updated balance
+            } else {
+                throw new SecurityException("Unauthorized access to account");
+            }
+        }
+
+        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transaction.getTransactionId());
+
         ApiFuture<WriteResult> collectionApiFuture = docRef.set(transaction);
 
         return "Transaction Record successfully created at: " + collectionApiFuture.get().getUpdateTime();

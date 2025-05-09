@@ -42,7 +42,14 @@ const Accounts = () => {
         setAccountAmount("");
         setAccountName("");
       } catch (error) {
-        console.error('Error adding account:', error);
+        if (axios.isAxiosError(error)) {
+          const message = error.response?.data?.message || error.response?.data || 'An unexpected error occurred';
+          console.error('Error adding account:', message);
+          alert(message); // Or showToast(message) / setErrorMessage(message)
+        } else {
+          console.error('Unknown error:', error);
+          alert('Something went wrong');
+        }
       }
     }
   };
@@ -91,7 +98,7 @@ const Accounts = () => {
     setEditModalOpen(true);
   };
 
-  // UPDATE BUDGETS
+  // UPDATE ACCOUNTS
   const handleUpdate = async () => {
     const user = getAuth().currentUser;
     if (!editingId || !editAmount || !user) return;
@@ -113,22 +120,33 @@ const Accounts = () => {
     }
   };
 
-  // DELETE BUDGETS
+  // DELETE ACCOUNTS
   const handleDelete = async (accountId) => {
-    const user = getAuth().currentUser;
-    if (!accountId || !user) return;
+  const user = getAuth().currentUser;
+  if (!accountId || !user) return;
+
+  // Show a confirmation dialog
+  const confirmDelete = window.confirm('Are you sure you want to delete this account? This will also delete all transactions related to this account.');
+
+  if (confirmDelete) {
     try {
       const token = await user.getIdToken();
-      await axios.delete(`http://localhost:8080/api/accounts/${accountId}`, {
+      const response = await axios.delete(`http://localhost:8080/api/accounts/${accountId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
+      console.log(response.data);
       await fetchAccounts();
     } catch (error) {
       console.error('Error deleting account:', error);
+      alert('There was an error deleting the account. Please try again.');
     }
-  };
+  } else {
+    console.log('Account deletion cancelled');
+  }
+};
+
 
   // CALCULATING TOTAL ASSETS, LIABILITIES, AND NET WORTH
   const totalAssets = accounts.reduce((acc, curr) => {
