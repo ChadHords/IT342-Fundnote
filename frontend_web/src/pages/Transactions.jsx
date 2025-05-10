@@ -43,10 +43,6 @@ import axios from "axios";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const Transactions = () => {
-  const predefinedCategories = ["Groceries", "Transport", "Utilities", "Entertainment", "Health", "Savings"];
-
-  const [loading, setLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("");
   // Automatically fetch the user's transactions after they log in, and to clear them if they log out
   useEffect(() => {
     const auth = getAuth();
@@ -63,12 +59,9 @@ const Transactions = () => {
     return () => unsubscribe(); // cleanup listener
   }, []);
 
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
-  const [openModal, setOpenModal] = useState(false);
-  const [newTransaction, setNewTransaction] = useState({
+  const predefinedCategories = ["Groceries", "Transport", "Utilities", "Entertainment", "Health", "Savings"];
+
+  const defaultTransaction = {
     category: "",
     date: new Date(),
     amount: "",
@@ -76,11 +69,39 @@ const Transactions = () => {
     toAccountId: "",
     fromAccountId: "",
     notes: "",
-  });
+  };
+
+  const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
+  const [transactions, setTransactions] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+
+  const [newTransaction, setNewTransaction] = useState(defaultTransaction);
 
   const handleViewDetails = (transaction) => {
     setSelectedTransaction(transaction);
     setViewDialogOpen(true);
+  };
+
+  const handleOpenEditTransaction = (transaction) => {
+    setNewTransaction({
+      ...transaction,
+      date: new Date(transaction.date), // Convert string to Date object
+    });
+    setIsEditMode(true);
+    setOpenModal(true);
+  };
+
+  const handleCloseTransactionForm = () => {
+    setOpenModal(false);
+    setIsEditMode(false);
+    setNewTransaction(defaultTransaction);
   };
 
   const handleInputChange = (e) => {
@@ -99,6 +120,7 @@ const Transactions = () => {
     });
   };
 
+  // ADD TRANSACTION
   const handleAddTransaction = async () => {
     const { type, category, date, amount, toAccountId, fromAccountId, notes } = newTransaction;
 
@@ -133,21 +155,103 @@ const Transactions = () => {
         },
       });
 
-      setNewTransaction({
-        category: "",
-        date: "",
-        amount: "",
-        type: "",
-        toAccountId: "",
-        fromAccountId: "",
-        notes: "",
-      });
+      setNewTransaction(defaultTransaction);
       setOpenModal(false);
       fetchTransactions();
-      console.log("Transaction record successfully added");
+      console.log("Transaction record successfully updated");
     } catch (error) {
       console.error("Error adding transaction:", error);
-      alert("Error adding transaction");
+      alert("Error updating transaction");
+    }
+  };
+
+  const isTransactionEqual = (t1, t2) => {
+    const keysToCompare = ["category", "date", "amount", "type", "toAccountId", "fromAccountId", "notes"];
+
+    return keysToCompare.every((key) => {
+      const val1 = key === "date" ? new Date(t1[key]).toISOString() : t1[key];
+      const val2 = key === "date" ? new Date(t2[key]).toISOString() : t2[key];
+      return val1 === val2;
+    });
+  };
+
+  // UPDATE TRANSACTION
+  const handleUpdateTransaction = async () => {
+    if (isTransactionEqual(newTransaction, selectedTransaction)) {
+      console.log("No changes detected.");
+      handleCloseTransactionForm();
+      return;
+    }
+
+    const { transactionId, type, category, date, amount, toAccountId, fromAccountId, notes } = newTransaction;
+
+    if (!category || !date || !amount || !type || (!toAccountId && !fromAccountId)) {
+      alert("Please fill out all fields");
+      return;
+    }
+
+    if (amount <= 0) {
+      alert("Amount must be greater than 0");
+      return;
+    }
+
+    try {
+      const user = getAuth().currentUser;
+      const token = await user.getIdToken();
+
+      // Clean the payload based on type
+      const payload = {
+        transactionId,
+        category,
+        date,
+        amount,
+        type,
+        toAccountId: type === "INCOME" ? toAccountId : null,
+        fromAccountId: type === "EXPENSE" ? fromAccountId : null,
+        notes,
+      };
+
+      await axios.put(`http://localhost:8080/api/transactions`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      handleCloseTransactionForm();
+      fetchTransactions();
+      console.log("Transaction record successfully updated");
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      alert("Error updating transaction");
+    }
+  };
+
+  // DELETE TRANSACTION
+  const handleDeleteTransaction = async () => {
+    if (!selectedTransaction) {
+      alert("No transaction selected.");
+      return;
+    }
+
+    const confirmDelete = window.confirm("Are you sure you want to delete this transaction?");
+    if (!confirmDelete) return;
+
+    try {
+      const user = getAuth().currentUser;
+      const token = await user.getIdToken();
+
+      await axios.delete(`http://localhost:8080/api/transactions/${selectedTransaction.transactionId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      handleCloseTransactionForm();
+      fetchTransactions();
+      console.log("Transaction successfully deleted");
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      alert("Error deleting transaction");
     }
   };
 
@@ -288,8 +392,8 @@ const Transactions = () => {
         {/* ======================================= MODAAAAAAAAAAAAAALLLLSSSS ============================================ */}
 
         {/* ADD TRANSACTION MODAL */}
-        <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth disableEnforceFocus disableAutoFocus>
-          <DialogTitle>Add New Transaction</DialogTitle>
+        <Dialog open={openModal} onClose={() => handleCloseTransactionForm()} maxWidth="sm" fullWidth disableEnforceFocus disableAutoFocus>
+          <DialogTitle>{isEditMode ? "Edit Transaction" : "Add New Transaction"}</DialogTitle>
           <DialogContent dividers>
             <FormControl fullWidth margin="normal">
               <InputLabel id="type-label">Type</InputLabel>
@@ -354,8 +458,8 @@ const Transactions = () => {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpenModal(false)}>Cancel</Button>
-            <Button variant="contained" onClick={handleAddTransaction}>
+            <Button onClick={() => handleCloseTransactionForm()}>Cancel</Button>
+            <Button variant="contained" onClick={isEditMode ? handleUpdateTransaction : handleAddTransaction}>
               Save
             </Button>
           </DialogActions>
@@ -514,7 +618,7 @@ const Transactions = () => {
                 }}
                 onClick={() => {
                   setViewDialogOpen(false);
-                  // Add your edit logic here, perhaps opening an edit dialog
+                  handleOpenEditTransaction(selectedTransaction);
                 }}
               >
                 Edit
@@ -528,7 +632,7 @@ const Transactions = () => {
                 }}
                 onClick={() => {
                   setViewDialogOpen(false);
-                  // Add your delete logic here
+                  handleDeleteTransaction();
                 }}
               >
                 Delete

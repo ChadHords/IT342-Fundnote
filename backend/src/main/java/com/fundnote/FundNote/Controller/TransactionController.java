@@ -46,9 +46,14 @@ public class TransactionController {
         return transactionService.getUserTransactionsByMonth(year, month, request);
     }
 
-    @PutMapping("/{transactionId}")
-    public TransactionEntity updateTransaction(@PathVariable String transactionId, @RequestBody TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
-        return transactionService.updateTransaction(transactionId, updatedTransaction, request);
+//    @PutMapping("/{transactionId}")
+//    public String updateTransaction(@PathVariable String transactionId, @RequestBody TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
+//        return transactionService.updateTransaction(transactionId, updatedTransaction, request);
+//    }
+
+    @PutMapping
+    public String updateTransaction(@RequestBody TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException, FirebaseAuthException {
+        return transactionService.updateTransaction(updatedTransaction, request);
     }
 
     @DeleteMapping("/{transactionId}")
