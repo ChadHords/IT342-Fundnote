@@ -5,6 +5,7 @@ import { Dashboard, AccountBalanceWallet, AttachMoney, Notifications, Settings, 
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import profileGif from '../assets/profile.gif';
+import fundnoteLogo from '../assets/FundNoteLogo.png';
 
 const drawerWidth = 260;
 
@@ -62,11 +63,14 @@ const Sidebar = () => {
   return (
     <Drawer variant="permanent" anchor="left" sx={{ width: drawerWidth, flexShrink: 0, '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', }, }}>
       <Box>
-        <Typography variant="h5" sx={{ p: 2, color: '#2f4f4f' }}>
-          FundNote
-        </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
+          <Box
+          component="img"
+          src={fundnoteLogo} // Update this path accordingly
+          alt="FundNote Logo"
+          sx={{ height: 50, p: 1}}
+        />
           <Avatar src={profileGif} sx={{ width: 80, height: 80, mb: 1 }} />
           {/* <Typography fontWeight={600}>
             {userProfile?.name || userAuthInfo?.displayName || 'No User'}

@@ -1,9 +1,10 @@
-import { Button, Divider, TextField, Typography } from "@mui/material";
+import { Button, Divider, TextField, Typography, Box } from "@mui/material";
 import LoginRegisterImg from "../assets/login-register-img.jpg";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/Firebase";
+import fundnoteLogo from '../assets/FundNoteLogo.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -28,7 +29,13 @@ const Login = () => {
       <div style={{ display: "flex", maxHeight: "100vh", overflow: "hidden" }}>
         <div style={{ width: "50%", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center", alignItems: "center", }}>
           <div style={{ width: "400px" }}>
-            <Typography sx={{ fontSize: "40px" }}>Get Started</Typography>
+            <Box
+              component="img"
+              src={fundnoteLogo} // Update this path accordingly
+              alt="FundNote Logo"
+              sx={{ height: 100, p: 1}}
+            />
+            <Typography sx={{ fontSize: "35px" }}>Get Started</Typography>
             <Typography sx={{ fontSize: "16px", color: "#808080" }}>
               Welcome to FundNote
             </Typography>
