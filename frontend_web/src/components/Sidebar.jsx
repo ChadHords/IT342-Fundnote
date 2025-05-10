@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Dashboard, AccountBalanceWallet, AttachMoney, Notifications, Settings, Logout, ListAlt } from '@mui/icons-material';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import profileGif from '../assets/profile.gif';
 
 const drawerWidth = 260;
 
@@ -66,10 +67,10 @@ const Sidebar = () => {
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
-          <Avatar sx={{ width: 64, height: 64, mb: 1 }} />
-          <Typography fontWeight={600}>
+          <Avatar src={profileGif} sx={{ width: 80, height: 80, mb: 1 }} />
+          {/* <Typography fontWeight={600}>
             {userProfile?.name || userAuthInfo?.displayName || 'No User'}
-          </Typography>
+          </Typography> */}
           <Typography variant="body2" color="text.secondary">
             {userAuthInfo?.email || 'No Email'}
           </Typography>

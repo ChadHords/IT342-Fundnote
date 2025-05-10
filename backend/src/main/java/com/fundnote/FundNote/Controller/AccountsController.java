@@ -4,6 +4,7 @@ import com.fundnote.FundNote.Entity.Accounts;
 import com.fundnote.FundNote.Service.AccountsService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -56,6 +57,9 @@ public class AccountsController {
             String uid = getUidFromToken(authorizationHeader);
             accountsService.createAccount(uid, accountData);
             return ResponseEntity.status(HttpStatus.CREATED).body("Account created successfully");
+        } catch (IllegalArgumentException e) {
+            logger.warning("Validation failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             logger.severe("Error creating account: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -84,10 +88,24 @@ public class AccountsController {
         try {
             String uid = getUidFromToken(authorizationHeader);
             accountsService.deleteAccount(uid, accountId);
+            logger.info("UID extracted from token: " + uid);
             return ResponseEntity.ok("Account deleted successfully");
         } catch (Exception e) {
             logger.severe("Error deleting account: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
+
+    @DeleteMapping("/deleteAllForCurrentUser")
+    public ResponseEntity<String> deleteAllUserAccounts(HttpServletRequest request) {
+        try {
+            String result = accountsService.deleteAllUserAccounts(request);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.severe("Error deleting user accounts: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to delete accounts.");
+        }
+    }
+
 }
