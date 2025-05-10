@@ -10,7 +10,7 @@ const Accounts = () => {
 
   const [openModal, setOpenModal] = useState(false);
   const [accountName, setAccountName] = useState('');
-  const [accountAmount, setAccountAmount] = useState('');
+  const [accountInitialAmount, setAccountInitialAmount] = useState('');
   const [accounts, setAccounts] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -18,7 +18,7 @@ const Accounts = () => {
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editAccountName, setEditAccountName] = useState('');
-  const [editAmount, setEditAmount] = useState('');
+  const [editInitialAmount, setEditInitialAmount] = useState('');
 
   const [editingId, setEditingId] = useState(null);
 
@@ -30,7 +30,8 @@ const Accounts = () => {
         const token = await user.getIdToken();
         await axios.post('http://localhost:8080/api/accounts', {
           account: accountName,
-          amount: parseFloat(accountAmount),
+          // amount: parseFloat(accountAmount),
+          initialAmount: parseFloat(accountInitialAmount),
         }, {
           headers: {
             'Content-Type': 'application/json',
@@ -39,10 +40,17 @@ const Accounts = () => {
         });
         await fetchAccounts();
         setOpenModal(false);
-        setAccountAmount("");
+        setAccountInitialAmount("");
         setAccountName("");
       } catch (error) {
-        console.error('Error adding account:', error);
+        if (axios.isAxiosError(error)) {
+          const message = error.response?.data?.message || error.response?.data || 'An unexpected error occurred';
+          console.error('Error adding account:', message);
+          alert(message); // Or showToast(message) / setErrorMessage(message)
+        } else {
+          console.error('Unknown error:', error);
+          alert('Something went wrong');
+        }
       }
     }
   };
@@ -87,19 +95,19 @@ const Accounts = () => {
   const handleEditClick = (account) => {
     setEditingId(account.id);
     setEditAccountName(account.account);
-    setEditAmount(account.amount);
+    setEditInitialAmount(account.initialAmount);
     setEditModalOpen(true);
   };
 
-  // UPDATE BUDGETS
+  // UPDATE ACCOUNTS
   const handleUpdate = async () => {
     const user = getAuth().currentUser;
-    if (!editingId || !editAmount || !user) return;
+    if (!editingId || !editInitialAmount || !user) return;
     try {
       const token = await user.getIdToken();
       await axios.put(`http://localhost:8080/api/accounts/${editingId}`, {
         account: editAccountName,
-        amount: parseFloat(editAmount),
+        initialAmount: parseFloat(editInitialAmount),
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -113,30 +121,41 @@ const Accounts = () => {
     }
   };
 
-  // DELETE BUDGETS
+  // DELETE ACCOUNTS
   const handleDelete = async (accountId) => {
-    const user = getAuth().currentUser;
-    if (!accountId || !user) return;
+  const user = getAuth().currentUser;
+  if (!accountId || !user) return;
+
+  // Show a confirmation dialog
+  const confirmDelete = window.confirm('Are you sure you want to delete this account? This will also delete all transactions related to this account.');
+
+  if (confirmDelete) {
     try {
       const token = await user.getIdToken();
-      await axios.delete(`http://localhost:8080/api/accounts/${accountId}`, {
+      const response = await axios.delete(`http://localhost:8080/api/accounts/${accountId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
+      console.log(response.data);
       await fetchAccounts();
     } catch (error) {
       console.error('Error deleting account:', error);
+      alert('There was an error deleting the account. Please try again.');
     }
-  };
+  } else {
+    console.log('Account deletion cancelled');
+  }
+};
+
 
   // CALCULATING TOTAL ASSETS, LIABILITIES, AND NET WORTH
   const totalAssets = accounts.reduce((acc, curr) => {
-    return curr.amount > 0 ? acc + curr.amount : acc;
+    return (curr.initialAmount + curr.amount) > 0 ? acc + (curr.initialAmount + curr.amount) : acc;
   }, 0);
 
   const totalLiabilities = accounts.reduce((acc, curr) => {
-    return curr.amount < 0 ? acc + curr.amount : acc;
+    return (curr.initialAmount + curr.amount) < 0 ? acc + (curr.initialAmount + curr.amount) : acc;
   }, 0);
 
   const netWorth = totalAssets + totalLiabilities;
@@ -177,11 +196,13 @@ const Accounts = () => {
       <Divider sx={{ my: 4 }} />
 
       <Grid container spacing={2}>
-        {accounts.map((account) => (
+        {accounts.map((account) => {
+          const balance = account.initialAmount + account.amount;
+          return (
           <Grid item size={{ xs: 12, sm: 4 }} key={account.id}>
-            <AccountCard name={account.account} balance={account.amount} isNegative={account.amount < 0} onEdit={() => handleEditClick(account)} onDelete={() => handleDelete(account.id)} />
+            <AccountCard name={account.account} balance={balance} isNegative={balance < 0} onEdit={() => handleEditClick(account)} onDelete={() => handleDelete(account.id)} />
           </Grid>
-        ))}
+        )})}
       </Grid>
 
       {/* ======================================= MODAAAAAAAAAAAAAALLLLSSSS ============================================ */}
@@ -191,7 +212,7 @@ const Accounts = () => {
         <DialogTitle>Add Account</DialogTitle>
         <DialogContent dividers>
           <TextField fullWidth margin="normal" label="Account Name" name="accountName" type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
-          <TextField fullWidth margin="normal" label="Amount" name="amount" type="number" value={accountAmount} onChange={(e) => setAccountAmount(e.target.value)} />
+          <TextField fullWidth margin="normal" label="Initial Amount" name="amount" type="number" value={accountInitialAmount} onChange={(e) => setAccountInitialAmount(e.target.value)} />
         </DialogContent>
         <DialogActions>
           <Button sx={{ color: "#37513D" }} onClick={() => setOpenModal(false)}> Cancel </Button>
@@ -205,8 +226,8 @@ const Accounts = () => {
           Edit Account
         </DialogTitle>
         <DialogContent dividers>
-          <TextField fullWidth margin="normal" label="New Account Name" type="text" value={editAccountName} onChange={(e) => setEditAccountName(e.target.value)} />
-          <TextField fullWidth margin="normal" label="New Amount" type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} />
+          <TextField fullWidth margin="normal" label="Account Name" type="text" value={editAccountName} onChange={(e) => setEditAccountName(e.target.value)} />
+          <TextField fullWidth margin="normal" label="Initial Amount" type="number" value={editInitialAmount.toString()} onChange={(e) => setEditInitialAmount(e.target.value)} />
         </DialogContent>
         <DialogActions>
           <Button sx={{ color: "#37513D" }} onClick={() => setEditModalOpen(false)} >

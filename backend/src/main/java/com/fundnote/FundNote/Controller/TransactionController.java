@@ -30,7 +30,7 @@ public class TransactionController {
 
     // Not the best practice in this case, please use other one instead. Keeping this just as a reference
     // This method is best for admins since userId parameter is used to fetch a specific user's transaction record.
-    // Why? Impractical endpoint naming, asks for userId from frontend when the currently logged-in user's uid is already stored in firebase
+    // Why? Impractical endpoint naming, asks for userId from frontend when the currently logged-in user's uid is already stored in backend
     @GetMapping("/getAllByUserId/{userId}")
     public List<TransactionEntity> getTransactionsByUserId(@PathVariable String userId) throws ExecutionException, InterruptedException {
         return transactionService.getTransactionsByUserId(userId);
@@ -46,9 +46,14 @@ public class TransactionController {
         return transactionService.getUserTransactionsByMonth(year, month, request);
     }
 
-    @PutMapping("/{transactionId}")
-    public TransactionEntity updateTransaction(@PathVariable String transactionId, @RequestBody TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
-        return transactionService.updateTransaction(transactionId, updatedTransaction, request);
+//    @PutMapping("/{transactionId}")
+//    public String updateTransaction(@PathVariable String transactionId, @RequestBody TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
+//        return transactionService.updateTransaction(transactionId, updatedTransaction, request);
+//    }
+
+    @PutMapping
+    public String updateTransaction(@RequestBody TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException, FirebaseAuthException {
+        return transactionService.updateTransaction(updatedTransaction, request);
     }
 
     @DeleteMapping("/{transactionId}")

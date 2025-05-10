@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.cloud.FirestoreClient;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+import com.fundnote.FundNote.Entity.Accounts;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -23,17 +24,11 @@ public class TransactionService {
     public String saveTransaction(TransactionEntity transaction, HttpServletRequest request) throws ExecutionException, InterruptedException, FirebaseAuthException {
 
         Firestore db = FirestoreClient.getFirestore();
+        String uid = (String)request.getAttribute("uid");
 
         transaction.setTransactionId(UUID.randomUUID().toString());
         transaction.setDateCreated(new Date());
-        transaction.setUserId((String)request.getAttribute("uid"));
-
-        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transaction.getTransactionId());
-
-        // Automatically convert amount to negative if it's an EXPENSE
-        if (transaction.getType() == TransactionType.EXPENSE && transaction.getAmount() > 0) {
-            transaction.setAmount(-transaction.getAmount());
-        }
+        transaction.setUserId(uid);
 
         // Validate transaction based on its type
         transaction.getType().validate(
@@ -42,6 +37,49 @@ public class TransactionService {
                 transaction.getToAccountId(),
                 transaction.getCategory()
         );
+
+        // 🔼 INCOME: add amount to toAccount
+        if (transaction.getType() == TransactionType.INCOME) {
+            String toAccountId = transaction.getToAccountId();
+            DocumentReference accountRef = db.collection("accounts").document(toAccountId);
+            DocumentSnapshot accountSnapshot = accountRef.get().get();
+
+            if (!accountSnapshot.exists()) {
+                throw new IllegalArgumentException("Account not found: " + toAccountId);
+            }
+
+            Accounts account = accountSnapshot.toObject(Accounts.class);
+            if (account != null && account.getUserId().equals(uid)) {
+                double newAmount = account.getAmount() + transaction.getAmount();
+                account.setAmount(newAmount);
+                accountRef.set(account); // Save updated balance
+            } else {
+                throw new SecurityException("Unauthorized access to account");
+            }
+        }
+
+        // EXPENSE: subtract amount to fromAccount
+        if (transaction.getType() == TransactionType.EXPENSE) {
+            String fromAccountId = transaction.getFromAccountId();
+            DocumentReference accountRef = db.collection("accounts").document(fromAccountId);
+            DocumentSnapshot accountSnapshot = accountRef.get().get();
+
+            if (!accountSnapshot.exists()) {
+                throw new IllegalArgumentException("Account not found: " + fromAccountId);
+            }
+
+            Accounts account = accountSnapshot.toObject(Accounts.class);
+            if (account != null && account.getUserId().equals(uid)) {
+                double newAmount = account.getAmount() - transaction.getAmount();
+                account.setAmount(newAmount);
+                accountRef.set(account); // Save updated balance
+            } else {
+                throw new SecurityException("Unauthorized access to account");
+            }
+        }
+
+        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transaction.getTransactionId());
+
         ApiFuture<WriteResult> collectionApiFuture = docRef.set(transaction);
 
         return "Transaction Record successfully created at: " + collectionApiFuture.get().getUpdateTime();
@@ -147,49 +185,150 @@ public class TransactionService {
         return transactions;
     }
 
-    public TransactionEntity updateTransaction (String transactionId,TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
+//    public String updateTransaction (String transactionId,TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException {
+//
+//        Firestore db = FirestoreClient.getFirestore();
+//        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transactionId);
+//        ApiFuture<DocumentSnapshot> future = docRef.get(); // Step 1: Get the future (asynchronous result)
+//        DocumentSnapshot document = future.get(); // Step 2: Block and wait for the actual data
+//        // It's like saying "Give me the ApiFuture for the document snapshot" → then → "Wait for that future to complete and give me the actual document."
+//
+//        if(!document.exists()) {
+//            throw new RuntimeException("Transaction not found.");
+//        }
+//
+//        UserAuthUtil.verifyOwnership(COLLECTION_NAME, transactionId, request);
+//
+//        // Set non-editable fields
+//        updatedTransaction.setTransactionId(transactionId);
+//        updatedTransaction.setUserId((String) request.getAttribute("uid"));
+//        updatedTransaction.setDateCreated(document.getDate("dateCreated"));
+//
+//        // Validate the updated transaction
+//        TransactionType type = TransactionType.valueOf(updatedTransaction.getType().toString());
+//        type.validate(updatedTransaction.getAmount(), updatedTransaction.getFromAccountId(), updatedTransaction.getToAccountId(), updatedTransaction.getCategory());
+//
+//        ApiFuture<WriteResult> writeResult = docRef.set(updatedTransaction);
+//
+//        return "Transaction Record successfully UPDATED at: " + writeResult.get().getUpdateTime();
+//    }
 
+    public String updateTransaction(TransactionEntity updatedTransaction, HttpServletRequest request) throws ExecutionException, InterruptedException, FirebaseAuthException {
         Firestore db = FirestoreClient.getFirestore();
-        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transactionId);
-        ApiFuture<DocumentSnapshot> future = docRef.get(); // Step 1: Get the future (asynchronous result)
-        DocumentSnapshot document = future.get(); // Step 2: Block and wait for the actual data
-        // It's like saying "Give me the ApiFuture for the document snapshot" → then → "Wait for that future to complete and give me the actual document."
+        String uid = (String) request.getAttribute("uid");
 
-        if(!document.exists()) {
-            throw new RuntimeException("Transaction not found.");
+        // Retrieve existing transaction
+        DocumentReference transactionRef = db.collection(COLLECTION_NAME).document(updatedTransaction.getTransactionId());
+        DocumentSnapshot transactionSnapshot = transactionRef.get().get();
+
+        if (!transactionSnapshot.exists()) {
+            throw new IllegalArgumentException("Transaction not found: " + updatedTransaction.getTransactionId());
         }
 
-        UserAuthUtil.verifyOwnership(COLLECTION_NAME, transactionId, request);
+        TransactionEntity oldTransaction = transactionSnapshot.toObject(TransactionEntity.class);
+        if (oldTransaction == null || !oldTransaction.getUserId().equals(uid)) {
+            throw new SecurityException("Unauthorized access to transaction");
+        }
 
-        // Set non-editable fields
-        updatedTransaction.setTransactionId(transactionId);
-        updatedTransaction.setUserId((String) request.getAttribute("uid"));
-        updatedTransaction.setDateCreated(document.getDate("dateCreated"));
+        // Reverse old transaction impact
+        if (oldTransaction.getType() == TransactionType.INCOME) {
+            adjustAccountBalance(db, oldTransaction.getToAccountId(), -oldTransaction.getAmount(), uid);
+        } else if (oldTransaction.getType() == TransactionType.EXPENSE) {
+            adjustAccountBalance(db, oldTransaction.getFromAccountId(), oldTransaction.getAmount(), uid);
+        }
 
-        // Validate the updated transaction
-        TransactionType type = TransactionType.valueOf(updatedTransaction.getType().toString());
-        type.validate(updatedTransaction.getAmount(), updatedTransaction.getFromAccountId(), updatedTransaction.getToAccountId(), updatedTransaction.getCategory());
+        // Validate updated transaction
+        updatedTransaction.getType().validate(
+                updatedTransaction.getAmount(),
+                updatedTransaction.getFromAccountId(),
+                updatedTransaction.getToAccountId(),
+                updatedTransaction.getCategory()
+        );
 
-        ApiFuture<WriteResult> writeResult = docRef.set(updatedTransaction);
+        // Apply new transaction impact
+        if (updatedTransaction.getType() == TransactionType.INCOME) {
+            adjustAccountBalance(db, updatedTransaction.getToAccountId(), updatedTransaction.getAmount(), uid);
+        } else if (updatedTransaction.getType() == TransactionType.EXPENSE) {
+            adjustAccountBalance(db, updatedTransaction.getFromAccountId(), -updatedTransaction.getAmount(), uid);
+        }
 
-        return updatedTransaction;
+        // Update metadata
+        updatedTransaction.setUserId(uid);
+        updatedTransaction.setDateCreated(oldTransaction.getDateCreated()); // preserve original creation date
+
+        ApiFuture<WriteResult> future = transactionRef.set(updatedTransaction);
+
+        return "Transaction successfully updated at: " + future.get().getUpdateTime();
     }
 
-    public String deleteTransaction (String transactionId, HttpServletRequest request) throws ExecutionException, InterruptedException {
+    private void adjustAccountBalance(Firestore db, String accountId, double amountDelta, String uid) throws ExecutionException, InterruptedException {
+        if (accountId == null) return;
+
+        DocumentReference accountRef = db.collection("accounts").document(accountId);
+        DocumentSnapshot accountSnapshot = accountRef.get().get();
+
+        if (!accountSnapshot.exists()) {
+            throw new IllegalArgumentException("Account not found: " + accountId);
+        }
+
+        Accounts account = accountSnapshot.toObject(Accounts.class);
+        if (account != null && account.getUserId().equals(uid)) {
+            account.setAmount(account.getAmount() + amountDelta);
+            accountRef.set(account);
+        } else {
+            throw new SecurityException("Unauthorized access to account");
+        }
+    }
+
+//    public String deleteTransaction (String transactionId, HttpServletRequest request) throws ExecutionException, InterruptedException {
+//        UserAuthUtil.verifyOwnership(COLLECTION_NAME, transactionId, request);
+//
+//        Firestore db = FirestoreClient.getFirestore();
+//        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transactionId);
+//
+//        DocumentSnapshot docSnapshot = docRef.get().get();
+//        if(!docSnapshot.exists()){
+//            throw new RuntimeException("Transaction not found.");
+//        }
+//
+//        ApiFuture<WriteResult> writeResult = docRef.delete();
+//        return "Transaction successfully deleted at: " + writeResult.get().getUpdateTime();
+//    }
+
+    public String deleteTransaction(String transactionId, HttpServletRequest request) throws ExecutionException, InterruptedException {
         UserAuthUtil.verifyOwnership(COLLECTION_NAME, transactionId, request);
 
         Firestore db = FirestoreClient.getFirestore();
-        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transactionId);
+        String uid = (String) request.getAttribute("uid");
 
+        DocumentReference docRef = db.collection(COLLECTION_NAME).document(transactionId);
         DocumentSnapshot docSnapshot = docRef.get().get();
-        if(!docSnapshot.exists()){
+
+        if (!docSnapshot.exists()) {
             throw new RuntimeException("Transaction not found.");
         }
 
+        TransactionEntity transaction = docSnapshot.toObject(TransactionEntity.class);
+
+        if (transaction == null || !transaction.getUserId().equals(uid)) {
+            throw new SecurityException("Unauthorized access to transaction");
+        }
+
+        // ✅ Reverse account balance impact
+        if (transaction.getType() == TransactionType.INCOME) {
+            adjustAccountBalance(db, transaction.getToAccountId(), -transaction.getAmount(), uid);
+        } else if (transaction.getType() == TransactionType.EXPENSE) {
+            adjustAccountBalance(db, transaction.getFromAccountId(), transaction.getAmount(), uid);
+        }
+
+        // 🔻 Delete the transaction after balance is adjusted
         ApiFuture<WriteResult> writeResult = docRef.delete();
+
         return "Transaction successfully deleted at: " + writeResult.get().getUpdateTime();
     }
 
+
+    // for development
     public String deleteAllUserTransactions(HttpServletRequest request) throws ExecutionException, InterruptedException {
         Firestore db = FirestoreClient.getFirestore();
         String uid = (String) request.getAttribute("uid");

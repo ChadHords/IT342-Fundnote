@@ -11,6 +11,7 @@ public class Accounts {
     private String id;
     private String userId;
     private String account;
+    private double initialAmount;
     private double amount;
     @ServerTimestamp
     private Date createdAt;
@@ -18,10 +19,11 @@ public class Accounts {
     public Accounts() {
     }
 
-    public Accounts(String userId, String account, double amount) {
+    public Accounts(String userId, String account, double amount, double initialAmount) {
         this.userId = userId;
         this.account = account;
         this.amount = amount;
+        this.initialAmount = initialAmount;
     }
 
     public String getId() {
@@ -46,6 +48,14 @@ public class Accounts {
 
     public void setAccount(String account) {
         this.account = account;
+    }
+
+    public double getInitialAmount() {
+        return initialAmount;
+    }
+
+    public void setInitialAmount(double initialAmount) {
+        this.initialAmount = initialAmount;
     }
 
     public double getAmount() {
