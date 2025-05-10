@@ -122,6 +122,15 @@ const Budgets = () => {
   // POST BUDGETS
   const handleSave = async () => {
     const user = getAuth().currentUser;
+
+    // Check for duplicate category
+    const isDuplicate = categories.some((category) => category.category.toLowerCase() === selectedCategory.toLowerCase());
+
+    if (isDuplicate) {
+      alert("A budget for this category already exists.");
+      return;
+    }
+
     if (selectedCategory && budgetLimit && user) {
       try {
         const token = await user.getIdToken();
@@ -148,6 +157,35 @@ const Budgets = () => {
       }
     }
   };
+
+  // const handleSave = async () => {
+  //   const user = getAuth().currentUser;
+  //   if (selectedCategory && budgetLimit && user) {
+  //     try {
+  //       const token = await user.getIdToken();
+  //       await axios.post(
+  //         "http://localhost:8080/api/budgets",
+  //         {
+  //           category: selectedCategory,
+  //           limit: parseFloat(budgetLimit),
+  //           timeFrame: selectedTimeFrame,
+  //         },
+  //         {
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
+  //       await fetchBudgets();
+  //       setOpenModal(false);
+  //       setBudgetLimit("");
+  //       setSelectedCategory("");
+  //     } catch (error) {
+  //       console.error("Error adding budget:", error);
+  //     }
+  //   }
+  // };
 
   const handleEditClick = (category) => {
     setEditingId(category.id);
@@ -299,7 +337,18 @@ const Budgets = () => {
         <DialogContent dividers>
           <FormControl fullWidth margin="normal">
             <InputLabel>Category</InputLabel>
-            <Select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} label="Category">
+            <Select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              label="Category"
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 48 * 4,
+                  },
+                },
+              }}
+            >
               {predefinedCategories.map((cat) => (
                 <MenuItem key={cat} value={cat}>
                   {cat}
