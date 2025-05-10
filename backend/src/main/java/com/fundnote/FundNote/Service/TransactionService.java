@@ -31,9 +31,9 @@ public class TransactionService {
         transaction.setUserId(uid);
 
         // Automatically convert amount to negative if it's an EXPENSE
-        if (transaction.getType() == TransactionType.EXPENSE && transaction.getAmount() > 0) {
-            transaction.setAmount(-transaction.getAmount());
-        }
+//        if (transaction.getType() == TransactionType.EXPENSE && transaction.getAmount() > 0) {
+//            transaction.setAmount(-transaction.getAmount());
+//        }
 
         // Validate transaction based on its type
         transaction.getType().validate(
@@ -75,7 +75,7 @@ public class TransactionService {
 
             Accounts account = accountSnapshot.toObject(Accounts.class);
             if (account != null && account.getUserId().equals(uid)) {
-                double newAmount = account.getAmount() + transaction.getAmount();
+                double newAmount = account.getAmount() - transaction.getAmount();
                 account.setAmount(newAmount);
                 accountRef.set(account); // Save updated balance
             } else {

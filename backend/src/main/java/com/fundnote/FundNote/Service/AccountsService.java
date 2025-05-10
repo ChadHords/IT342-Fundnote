@@ -97,8 +97,10 @@ public class AccountsService {
             Map<String, Object> data = new HashMap<>();
             data.put("userId", userId);
             data.put("account", accountName); // Optional: store as lowercase
-            Object amount = accountData.get("amount");
-            data.put("amount", amount != null ? amount : 0.0);
+//            Object amount = accountData.get("amount");
+            Object initialAmount = accountData.get("initialAmount");
+            data.put("initialAmount", initialAmount != null ? initialAmount : 0.0);
+            data.put("amount", 0.0);
             data.put("createdAt", FieldValue.serverTimestamp());
 
             firestore.collection(ACCOUNTS_COLLECTION).add(data).get();
