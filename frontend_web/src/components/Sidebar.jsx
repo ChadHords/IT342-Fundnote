@@ -72,9 +72,9 @@ const Sidebar = () => {
           sx={{ height: 50, p: 1}}
         />
           <Avatar src={profileGif} sx={{ width: 80, height: 80, mb: 1 }} />
-          {/* <Typography fontWeight={600}>
+          <Typography fontWeight={600}>
             {userProfile?.name || userAuthInfo?.displayName || 'No User'}
-          </Typography> */}
+          </Typography>
           <Typography variant="body2" color="text.primary">
             {userAuthInfo?.email || 'No Email'}
           </Typography>
