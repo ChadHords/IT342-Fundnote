@@ -28,9 +28,9 @@ const AccountCard = ({ name, balance, isNegative, onEdit, onDelete }) => {
                 {isNegative ? '-$' : '$'}{Math.abs(balance).toLocaleString()}
             </Typography>
 
-            <Typography variant="body2" color="primary" sx={{ mt: 1, cursor: 'pointer' }} >
+            {/* <Typography variant="body2" color="primary" sx={{ mt: 1, cursor: 'pointer' }} >
                 View transactions
-            </Typography>
+            </Typography> */}
         </Card>
     );
 };

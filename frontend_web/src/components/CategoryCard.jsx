@@ -61,9 +61,9 @@ const CategoryCard = ({ categoryName, total, spent, timeFrame, onEdit, onDelete 
         />
       </Box>
 
-      <Typography variant="body2" color="#37513D" mt={1} sx={{ cursor: "pointer" }}>
+      {/* <Typography variant="body2" color="#37513D" mt={1} sx={{ cursor: "pointer" }}>
         View transactions
-      </Typography>
+      </Typography> */}
     </Card>
   );
 };
