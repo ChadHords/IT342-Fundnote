@@ -57,7 +57,7 @@ const Overview = () => {
     if (user) {
       try {
         const token = await user.getIdToken();
-        const response = await axios.get("http://localhost:8080/api/transactions", {
+        const response = await axios.get("https://it342-fundnote.onrender.com/api/transactions", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
