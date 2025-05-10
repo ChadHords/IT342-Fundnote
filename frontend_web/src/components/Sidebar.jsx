@@ -67,7 +67,7 @@ const Sidebar = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
           <Box
           component="img"
-          src={fundnoteLogo} // Update this path accordingly
+          src={fundnoteLogo} 
           alt="FundNote Logo"
           sx={{ height: 50, p: 1}}
         />
@@ -75,7 +75,7 @@ const Sidebar = () => {
           {/* <Typography fontWeight={600}>
             {userProfile?.name || userAuthInfo?.displayName || 'No User'}
           </Typography> */}
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.primary">
             {userAuthInfo?.email || 'No Email'}
           </Typography>
         </Box>
