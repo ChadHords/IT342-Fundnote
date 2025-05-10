@@ -208,7 +208,7 @@ const Transactions = () => {
         notes,
       };
 
-      await axios.post("http://localhost:8080/api/transactions", payload, {
+      await axios.post("https://it342-fundnote.onrender.com/api/transactions", payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -270,7 +270,7 @@ const Transactions = () => {
         notes,
       };
 
-      await axios.put(`http://localhost:8080/api/transactions`, payload, {
+      await axios.put(`https://it342-fundnote.onrender.com/api/transactions`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -299,7 +299,7 @@ const Transactions = () => {
       const user = getAuth().currentUser;
       const token = await user.getIdToken();
 
-      await axios.delete(`http://localhost:8080/api/transactions/${selectedTransaction.transactionId}`, {
+      await axios.delete(`https://it342-fundnote.onrender.com/api/transactions/${selectedTransaction.transactionId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
