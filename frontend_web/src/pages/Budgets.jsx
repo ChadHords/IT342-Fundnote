@@ -23,12 +23,21 @@ import axios from "axios";
 
 const Budgets = () => {
   const predefinedCategories = [
-    "Groceries",
-    "Transport",
-    "Utilities",
+    "Baby",
+    "Bills",
+    "Car",
+    "Clothing",
+    "Education",
+    "Electronics",
     "Entertainment",
+    "Food",
     "Health",
-    "Savings",
+    "Home",
+    "Insurance",
+    "Shopping",
+    "Social",
+    "Tax",
+    "Transportation",
   ];
   const timeFrame = ["Daily", "Weekly", "Monthly", "Yearly"];
 
@@ -43,6 +52,8 @@ const Budgets = () => {
   const [editLimit, setEditLimit] = useState("");
 
   const [editingId, setEditingId] = useState(null);
+
+  const [transactions, setTransactions] = useState([]);
 
   // GET BUDGETS
   const fetchBudgets = async () => {
@@ -68,14 +79,40 @@ const Budgets = () => {
     }
   };
 
+  // GET TRANSACTIONS
+  const fetchTransactions = async () => {
+    setLoading(true);
+    const user = getAuth().currentUser;
+    if (user) {
+      try {
+        const token = await user.getIdToken();
+        const response = await axios.get("http://localhost:8080/api/transactions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setTransactions(response.data);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+      setTransactions([]);
+    }
+  };
+
   // Automatically fetch the user's budgets after they log in, and to clear them if they log out
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         await fetchBudgets();
+        await fetchTransactions();
       } else {
         setCategories([]);
+        setTransactions([]);
       }
     });
 
@@ -160,25 +197,26 @@ const Budgets = () => {
     }
   };
 
+  const updatedCategories = categories.map((category) => {
+    const totalSpent = transactions.filter((tx) => tx.type === "EXPENSE" && tx.category === category.category).reduce((sum, tx) => sum + tx.amount, 0);
+
+    return {
+      ...category,
+      spent: totalSpent,
+    };
+  });
+
   // CALCULATE TOTAL BUDGETS
-  const totalBudget = categories.reduce(
-    (acc, curr) => acc + (curr.limit || 0),
-    0
-  );
-  const totalSpent = categories.reduce(
-    (acc, curr) => acc + (curr.spent || 0),
-    0
-  );
+  // const totalBudget = categories.reduce((acc, curr) => acc + (curr.limit || 0), 0);
+  // const totalSpent = categories.reduce((acc, curr) => acc + (curr.spent || 0), 0);
+  // const remaining = totalBudget - totalSpent;
+  const totalSpent = updatedCategories.reduce((acc, curr) => acc + curr.spent, 0);
+  const totalBudget = updatedCategories.reduce((acc, curr) => acc + (curr.limit || 0), 0);
   const remaining = totalBudget - totalSpent;
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100vh"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <CircularProgress />
       </Box>
     );
@@ -208,36 +246,20 @@ const Budgets = () => {
 
       <Grid container spacing={2}>
         <Grid item size={{ xs: 12, sm: 4 }}>
-          <BudgetCard
-            title="Total Budget"
-            amount={totalBudget}
-            subtitle="Across all categories"
-          />
+          <BudgetCard title="Total Budget" amount={totalBudget} subtitle="Across all categories" />
         </Grid>
         <Grid item size={{ xs: 12, sm: 4 }}>
-          <BudgetCard
-            title="Total Spent"
-            amount={totalSpent}
-            subtitle={`${((totalSpent / totalBudget) * 100).toFixed(
-              2
-            )}% of total budget`}
-          />
+          <BudgetCard title="Total Spent" amount={totalSpent} subtitle={`${((totalSpent / totalBudget) * 100).toFixed(2)}% of total budget`} />
         </Grid>
         <Grid item size={{ xs: 12, sm: 4 }}>
-          <BudgetCard
-            title="Remaining"
-            amount={remaining}
-            subtitle={`${((remaining / totalBudget) * 100).toFixed(
-              2
-            )}% of total budget`}
-          />
+          <BudgetCard title="Remaining" amount={remaining} subtitle={`${((remaining / totalBudget) * 100).toFixed(2)}% of total budget`} />
         </Grid>
       </Grid>
 
       <Divider sx={{ my: 4 }} />
 
       <Grid container spacing={2}>
-        {categories.map((category) => (
+        {updatedCategories.map((category) => (
           <Grid item size={{ xs: 12, sm: 4 }} key={category.id}>
             <CategoryCard
               categoryName={category.category}
@@ -254,58 +276,30 @@ const Budgets = () => {
       {/* ======================================= MODALS NANI NGA PART ============================================ */}
 
       {/* MODAL FOR EDIT LIMITE */}
-      <Dialog
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle fontWeight="bold" color="#37513D">
           Edit Limit
         </DialogTitle>
         <DialogContent dividers>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="New Limit"
-            type="number"
-            value={editLimit}
-            onChange={(e) => setEditLimit(e.target.value)}
-          />
+          <TextField fullWidth margin="normal" label="New Limit" type="number" value={editLimit} onChange={(e) => setEditLimit(e.target.value)} />
         </DialogContent>
         <DialogActions>
-          <Button
-            sx={{ color: "#37513D" }}
-            onClick={() => setEditModalOpen(false)}
-          >
+          <Button sx={{ color: "#37513D" }} onClick={() => setEditModalOpen(false)}>
             Cancel
           </Button>
-          <Button
-            variant="contained"
-            sx={{ backgroundColor: "#37513D" }}
-            onClick={handleUpdate}
-          >
+          <Button variant="contained" sx={{ backgroundColor: "#37513D" }} onClick={handleUpdate}>
             Update
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* MODAL FOR ADDING BUDGET */}
-      <Dialog
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Set Budget</DialogTitle>
         <DialogContent dividers>
           <FormControl fullWidth margin="normal">
             <InputLabel>Category</InputLabel>
-            <Select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              label="Category"
-            >
+            <Select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} label="Category">
               {predefinedCategories.map((cat) => (
                 <MenuItem key={cat} value={cat}>
                   {cat}
@@ -315,11 +309,7 @@ const Budgets = () => {
           </FormControl>
           <FormControl fullWidth margin="normal">
             <InputLabel>Time Frame</InputLabel>
-            <Select
-              value={selectedTimeFrame}
-              onChange={(e) => setSelectedTimeFrame(e.target.value)}
-              label="Time Frame"
-            >
+            <Select value={selectedTimeFrame} onChange={(e) => setSelectedTimeFrame(e.target.value)} label="Time Frame">
               {timeFrame.map((time) => (
                 <MenuItem key={time} value={time}>
                   {time}
@@ -327,25 +317,13 @@ const Budgets = () => {
               ))}
             </Select>
           </FormControl>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Limit"
-            name="limit"
-            type="number"
-            value={budgetLimit}
-            onChange={(e) => setBudgetLimit(e.target.value)}
-          />
+          <TextField fullWidth margin="normal" label="Limit" name="limit" type="number" value={budgetLimit} onChange={(e) => setBudgetLimit(e.target.value)} />
         </DialogContent>
         <DialogActions>
           <Button sx={{ color: "#37513D" }} onClick={() => setOpenModal(false)}>
             Cancel
           </Button>
-          <Button
-            sx={{ backgroundColor: "#37513D" }}
-            variant="contained"
-            onClick={handleSave}
-          >
+          <Button sx={{ backgroundColor: "#37513D" }} variant="contained" onClick={handleSave}>
             Save
           </Button>
         </DialogActions>

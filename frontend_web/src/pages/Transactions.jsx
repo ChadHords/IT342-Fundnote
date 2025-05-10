@@ -59,7 +59,24 @@ const Transactions = () => {
     return () => unsubscribe(); // cleanup listener
   }, []);
 
-  const predefinedCategories = ["Groceries", "Transport", "Utilities", "Entertainment", "Health", "Savings"];
+  const expenseCategories = [
+    "Baby",
+    "Bills",
+    "Car",
+    "Clothing",
+    "Education",
+    "Electronics",
+    "Entertainment",
+    "Food",
+    "Health",
+    "Home",
+    "Insurance",
+    "Shopping",
+    "Social",
+    "Tax",
+    "Transportation",
+  ];
+  const incomeCategories = ["Salary", "Sale", "Lottery", "Awards", "Refunds", "Coupons"];
 
   const defaultTransaction = {
     category: "",
@@ -118,6 +135,48 @@ const Transactions = () => {
       }
       return { ...prev, [name]: value };
     });
+  };
+
+  // GET TRANSACTIONS
+  const fetchTransactions = async () => {
+    setLoading(true);
+    const user = getAuth().currentUser;
+    if (user) {
+      try {
+        const token = await user.getIdToken();
+        const response = await axios.get("http://localhost:8080/api/transactions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setTransactions(response.data);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+      setTransactions([]);
+    }
+  };
+
+  // FETCH ACCOUNTS
+  const fetchAccounts = async () => {
+    const user = getAuth().currentUser;
+    if (user) {
+      try {
+        const token = await user.getIdToken();
+        const response = await axios.get("http://localhost:8080/api/accounts", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setAccounts(response.data);
+      } catch (error) {
+        console.error("Error fetching accounts:", error);
+      }
+    }
   };
 
   // ADD TRANSACTION
@@ -255,48 +314,6 @@ const Transactions = () => {
     }
   };
 
-  // GET TRANSACTIONS
-  const fetchTransactions = async () => {
-    setLoading(true);
-    const user = getAuth().currentUser;
-    if (user) {
-      try {
-        const token = await user.getIdToken();
-        const response = await axios.get("http://localhost:8080/api/transactions", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setTransactions(response.data);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
-      setTransactions([]);
-    }
-  };
-
-  // FETCH ACCOUNTS
-  const fetchAccounts = async () => {
-    const user = getAuth().currentUser;
-    if (user) {
-      try {
-        const token = await user.getIdToken();
-        const response = await axios.get("http://localhost:8080/api/accounts", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setAccounts(response.data);
-      } catch (error) {
-        console.error("Error fetching accounts:", error);
-      }
-    }
-  };
-
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box component="main" sx={{ bgcolor: "background.default", p: 3 }}>
@@ -314,10 +331,10 @@ const Transactions = () => {
           }}
         >
           <Box display="flex" alignItems="center">
-            <FilterAltIcon sx={{ color: "#2f4f4f", mr: 1 }} />
+            {/* <FilterAltIcon sx={{ color: "#2f4f4f", mr: 1 }} />
             <Typography variant="subtitle1" sx={{ color: "#2f4f4f" }}>
               Advance Filter
-            </Typography>
+            </Typography> */}
           </Box>
 
           <Button
@@ -355,19 +372,32 @@ const Transactions = () => {
                     <TableCell>{row.category}</TableCell>
                     <TableCell>{new Date(row.date).toLocaleDateString("en-CA")}</TableCell>
                     {/* <TableCell>${parseFloat(row.amount).toFixed(2)}</TableCell> */}
-                    <TableCell>
-                      {/* Math Abs is unnecessary if amount is changed to always be a positive number */}
+                    <TableCell
+                      sx={{
+                        color: row.type === "EXPENSE" ? "error.main" : "success.main",
+                        fontWeight: "bold",
+                      }}
+                    >
                       {row.type === "EXPENSE"
                         ? `- $${Math.abs(parseFloat(row.amount)).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}`
-                        : `$${parseFloat(row.amount).toLocaleString(undefined, {
+                        : `\u00A0\u00A0$${parseFloat(row.amount).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}`}
                     </TableCell>
-                    <TableCell>{row.type}</TableCell>
+
+                    <TableCell
+                      sx={{
+                        color: row.type === "EXPENSE" ? "error.main" : "success.main",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {row.type}
+                    </TableCell>
+
                     <TableCell>
                       <Button
                         size="small"
@@ -412,8 +442,22 @@ const Transactions = () => {
           /> */}
             <FormControl fullWidth margin="normal">
               <InputLabel id="category-label">Category</InputLabel>
-              <Select labelId="category-label" name="category" value={newTransaction.category} onChange={handleInputChange} label="Category">
-                {predefinedCategories.map((cat) => (
+              <Select
+                labelId="category-label"
+                name="category"
+                value={newTransaction.category}
+                onChange={handleInputChange}
+                label="Category"
+                disabled={!newTransaction.type}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 48 * 5,
+                    },
+                  },
+                }}
+              >
+                {(newTransaction.type === "EXPENSE" ? expenseCategories : incomeCategories).map((cat) => (
                   <MenuItem key={cat} value={cat}>
                     {cat}
                   </MenuItem>
@@ -424,7 +468,14 @@ const Transactions = () => {
               label="Date"
               value={newTransaction.date}
               onChange={(value) => handleInputChange({ target: { name: "date", value } })}
-              slotProps={{ textField: { fullWidth: true, margin: "normal" } }}
+              slotProps={{
+                textField: { fullWidth: true, margin: "normal" },
+                openPickerIcon: {
+                  sx: {
+                    color: "#37513D",
+                  },
+                },
+              }}
             />
             <TextField fullWidth margin="normal" label="Amount" name="amount" type="number" value={newTransaction.amount} onChange={handleInputChange} inputProps={{ min: 0 }} />
             <FormControl fullWidth margin="normal">
@@ -435,6 +486,13 @@ const Transactions = () => {
                 value={newTransaction.type === "INCOME" ? newTransaction.toAccountId : newTransaction.fromAccountId || ""}
                 onChange={handleInputChange}
                 label="Account"
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 48 * 5,
+                    },
+                  },
+                }}
               >
                 {accounts.map((acc) => (
                   <MenuItem key={acc.id} value={acc.id}>
@@ -458,8 +516,18 @@ const Transactions = () => {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => handleCloseTransactionForm()}>Cancel</Button>
-            <Button variant="contained" onClick={isEditMode ? handleUpdateTransaction : handleAddTransaction}>
+            <Button sx={{ color: "#37513D" }} onClick={() => handleCloseTransactionForm()}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: "#37513D",
+                textTransform: "none",
+                "&:hover": { backgroundColor: "#1e3a3a" },
+              }}
+              onClick={isEditMode ? handleUpdateTransaction : handleAddTransaction}
+            >
               Save
             </Button>
           </DialogActions>
